@@ -732,10 +732,10 @@ index 0000000..fbe9535
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibilityMgr.cs b/Assembly-CSharp/Accessibility/AccessibilityMgr.cs
 new file mode 100644
-index 0000000..60503f8
+index 0000000..bc4b6cd
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibilityMgr.cs
-@@ -0,0 +1,652 @@
+@@ -0,0 +1,653 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -1276,6 +1276,7 @@ index 0000000..60503f8
 +
 +            ret.AddComponent<AudioSource>();
 +            ret.AddComponent<AccessibleSpeechMgr>();
++            ret.AddComponent<HSASoundMgr>();
 +
 +            return ret;
 +        }
@@ -2266,10 +2267,10 @@ index 0000000..75b068e
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleCard.cs b/Assembly-CSharp/Accessibility/AccessibleCard.cs
 new file mode 100644
-index 0000000..80c91f5
+index 0000000..2418208
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleCard.cs
-@@ -0,0 +1,292 @@
+@@ -0,0 +1,297 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Text;
@@ -2335,6 +2336,11 @@ index 0000000..80c91f5
 +            if (m_card.GetEntity().GetZone() == TAG_ZONE.SECRET && m_card.GetEntity().IsObjective())
 +            {
 +                ret.Add(m_card.GetEntity().GetCustomObjectiveBannerText());
++            }
++
++            if (GameMgr.Get().IsBattlegroundDuoGame() && m_card.GetActor().GetActivePingType() != TEAMMATE_PING_TYPE.INVALID)
++            {
++                ret.Add(LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_CARD_PINGED_LINE, AccessibleBattlegroundsGameplay.GetPingName(m_card.GetActor().GetActivePingType())));
 +            }
 +		}
 +
@@ -3955,10 +3961,10 @@ index 0000000..f68be9f
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 0000000..e6ada19
+index 0000000..95e2fab
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,2890 @@
+@@ -0,0 +1,2933 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -4000,6 +4006,9 @@ index 0000000..e6ada19
 +            BUYING_CARD,
 +            SELLING_MINION,
 +            MOVING_MINION,
++            PASSING_CARD,
++            VIEWING_TEAMMATES_BOARD,
++            VIEWING_TEAMMATES_CHOICES,
 +            READING_LEADERBOARD,
 +        }
 +
@@ -4015,7 +4024,7 @@ index 0000000..e6ada19
 +        protected GameState.ResponseMode m_curResponseMode;
 +        protected GameState.ResponseMode m_prevResponseMode;
 +
-+        protected Zone m_curZone;
++        protected IZone m_curZone;
 +
 +        protected AccessibleCard m_cardBeingRead;
 +
@@ -4253,11 +4262,11 @@ index 0000000..e6ada19
 +        {
 +            m_cardBeingRead = AccessibleCard.CreateCard(this, card);
 +            var prevZone = m_curZone;
-+            m_curZone = card.GetZone();
++            m_curZone = card.GetAccessibleZone();
 +            ReadZoneChangeIfNecessary(card, prevZone, m_curZone, forceZoneRead);
 +        }
 +
-+        protected void ReadZoneChangeIfNecessary(Card card, Zone fromZone, Zone toZone, bool forceZoneRead)
++        protected void ReadZoneChangeIfNecessary(Card card, IZone fromZone, IZone toZone, bool forceZoneRead)
 +        {
 +            if (fromZone == toZone && !forceZoneRead)
 +            {
@@ -4267,7 +4276,7 @@ index 0000000..e6ada19
 +            var player = GameState.Get().GetFriendlySidePlayer();
 +            var opponent = GameState.Get().GetOpposingSidePlayer();
 +
-+            if (card.GetEntity() == player.GetHeroPower())
++            if (card == GetPlayerHeroPower())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_PLAYER_HERO_POWER));
 +            }
@@ -4283,7 +4292,7 @@ index 0000000..e6ada19
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_OPPONENT_WEAPON));
 +            }
-+            else if (toZone == player.GetHandZone())
++            else if (toZone == GetPlayerHand())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_PLAYER_HAND));
 +            }
@@ -4291,19 +4300,19 @@ index 0000000..e6ada19
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_OPPONENT_HAND)); // Not needed atm
 +            }
-+            else if (toZone == player.GetBattlefieldZone())
++            else if (toZone == GetPlayerMinions())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_PLAYER_MINIONS));
 +            }
-+            else if (toZone == opponent.GetBattlefieldZone())
++            else if (toZone == GetOpponentMinions())
 +            {
 +                ReadOpponentZoneName();
 +            }
-+            else if (toZone == player.GetSecretZone())
++            else if (toZone == GetPlayerSecrets())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_PLAYER_SECRETS));
 +            }
-+            else if (toZone == opponent.GetSecretZone())
++            else if (toZone == GetOpponentSecrets())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_ZONE_OPPONENT_SECRETS)); // Not needed atm
 +            }
@@ -4649,7 +4658,7 @@ index 0000000..e6ada19
 +
 +        private bool CanTradeCard(Card card)
 +        {
-+            if (card == null || card.GetZone() != GameState.Get().GetFriendlySidePlayer().GetHandZone())
++            if (card == null || card.GetAccessibleZone() != GameState.Get().GetFriendlySidePlayer().GetHandZone())
 +            {
 +                return false;
 +            }
@@ -5012,7 +5021,7 @@ index 0000000..e6ada19
 +                return;
 +            }
 +
-+            if (m_cardBeingRead.GetCard().GetZone() != GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone())
++            if (m_cardBeingRead.GetCard().GetAccessibleZone() != GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone())
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_SEND_TO_FACE_NOT_FRIENDLY_MINION));
 +                return;
@@ -5060,7 +5069,7 @@ index 0000000..e6ada19
 +
 +            foreach (var entity in faceTargetters)
 +            {
-+                if (entity.IsMinion() && !entity.HasUsableTitanAbilities() && entity.GetCard()?.GetZone() == GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone())
++                if (entity.IsMinion() && !entity.HasUsableTitanAbilities() && entity.GetCard()?.GetAccessibleZone() == GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone())
 +                {
 +                    ret.Add(entity.GetCard());
 +                }
@@ -5160,7 +5169,7 @@ index 0000000..e6ada19
 +                m_forceAnnounceChooseTarget = false;
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_CHOOSE_TARGET));
 +
-+                if (m_cardBeingRead != null && m_cardBeingRead.GetCard().GetZone() == GameState.Get().GetFriendlySidePlayer().GetHandZone())
++                if (m_cardBeingRead != null && m_cardBeingRead.GetCard().GetAccessibleZone() == GameState.Get().GetFriendlySidePlayer().GetHandZone())
 +                {
 +                    StopReadingCard(false);
 +                }
@@ -5309,7 +5318,7 @@ index 0000000..e6ada19
 +                return;
 +            }
 +
-+            if (m_cardBeingRead.GetCard().GetZone() != m_curZone)
++            if (m_cardBeingRead.GetCard().GetAccessibleZone() != m_curZone)
 +            {
 +                StopReadingCard();
 +            }
@@ -5521,7 +5530,7 @@ index 0000000..e6ada19
 +
 +        protected void SeeOpponentMinions()
 +        {
-+            var opponentMinions = GameState.Get().GetOpposingSidePlayer().GetBattlefieldZone();
++            var opponentMinions = GetOpponentMinions();
 +
 +            if (opponentMinions.GetCardCount() == 0)
 +            {
@@ -5533,6 +5542,11 @@ index 0000000..e6ada19
 +            }
 +        }
 +
++        protected virtual IZone GetOpponentMinions()
++        {
++            return GameState.Get().GetOpposingSidePlayer().GetBattlefieldZone();
++        }
++
 +        protected virtual void ReadOpponentMinionsEmpty()
 +        {
 +            AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_SEE_ZONE_OPPONENT_MINIONS_EMPTY));
@@ -5540,7 +5554,7 @@ index 0000000..e6ada19
 +
 +        protected void SeePlayerMinions()
 +        {
-+            var playerMinions = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
++            var playerMinions = GetPlayerMinions();
 +
 +            if (playerMinions.GetCardCount() == 0)
 +            {
@@ -5552,9 +5566,14 @@ index 0000000..e6ada19
 +            }
 +        }
 +
++        protected virtual IZone GetPlayerMinions()
++        {
++            return GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
++        }
++
 +        protected void SeePlayerSecrets()
 +        {
-+            var playerSecrets = GameState.Get().GetFriendlySidePlayer().GetSecretZone();
++            var playerSecrets = GetPlayerSecrets();
 +
 +            if (playerSecrets.GetCardCount() == 0)
 +            {
@@ -5566,9 +5585,14 @@ index 0000000..e6ada19
 +            }
 +        }
 +
++        protected virtual  IZone GetPlayerSecrets()
++        {
++            return GameState.Get().GetFriendlySidePlayer().GetSecretZone();
++        }
++
 +        protected void SeeOpponentSecrets()
 +        {
-+            var opponentSecrets = GameState.Get().GetOpposingSidePlayer().GetSecretZone();
++            var opponentSecrets = GetOpponentSecrets();
 +
 +            if (opponentSecrets.GetCardCount() == 0)
 +            {
@@ -5580,6 +5604,10 @@ index 0000000..e6ada19
 +            }
 +        }
 +
++        protected virtual IZone GetOpponentSecrets()
++        {
++            return GameState.Get().GetOpposingSidePlayer().GetSecretZone();
++        }
 +
 +        protected void SeeOpponentHero()
 +        {
@@ -5588,12 +5616,17 @@ index 0000000..e6ada19
 +
 +        protected void SeePlayerHero()
 +        {
-+            FocusOnCard(GameState.Get().GetFriendlySidePlayer().GetHeroCard(), false);
++            FocusOnCard(GetPlayerHero(), false);
++        }
++
++        protected virtual Card GetPlayerHero()
++        {
++            return GameState.Get().GetFriendlySidePlayer().GetHeroCard();
 +        }
 +
 +        protected void SeePlayerHeroPower()
 +        {
-+            var heroPower = GameState.Get().GetFriendlySidePlayer().GetHeroPowerCard();
++            var heroPower = GetPlayerHeroPower();
 +            if (heroPower != null)
 +            {
 +                FocusOnCard(heroPower, false);
@@ -5602,6 +5635,11 @@ index 0000000..e6ada19
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_SEE_ZONE_PLAYER_HERO_POWER_EMPTY));
 +            }
++        }
++
++        protected virtual Card GetPlayerHeroPower()
++        {
++            return GameState.Get().GetFriendlySidePlayer().GetHeroPowerCard();
 +        }
 +
 +        protected void SeeOpponentHeroPower()
@@ -6004,11 +6042,11 @@ index 0000000..e6ada19
 +
 +            var speech = m_cardBeingRead.GetLine(0);
 +
-+            var zonePos = card.GetZone().FindCardPos(card); // card.GetZonePosition() isn't trustworthy. Wasn't working for secrets
++            var zonePos = card.GetAccessibleZone().FindCardPos(card); // card.GetAccessibleZonePosition() isn't trustworthy. Wasn't working for secrets
 +
 +            if (ShouldReadCardAsList(card))
 +            {
-+                AccessibilityMgr.Output(this, AccessibleSpeech.MENU_OPTION(speech, zonePos, card.GetZone().GetCardCount()));
++                AccessibilityMgr.Output(this, AccessibleSpeech.MENU_OPTION(speech, zonePos, card.GetAccessibleZone().GetCardCount()));
 +            }
 +            else
 +            {
@@ -6022,20 +6060,19 @@ index 0000000..e6ada19
 +        {
 +            var player = GameState.Get().GetFriendlySidePlayer();
 +            var opponent = GameState.Get().GetOpposingSidePlayer();
++            var zone = card.GetAccessibleZone();
 +
-+            var cardZone = card.GetZone();
-+
-+            return cardZone == player.GetHandZone() ||
-+                cardZone == opponent.GetHandZone() ||
-+                cardZone == player.GetBattlefieldZone() ||
-+                cardZone == opponent.GetBattlefieldZone() ||
-+                cardZone == player.GetSecretZone() ||
-+                cardZone == opponent.GetSecretZone();
++            return zone == GetPlayerHand() ||
++                zone == opponent.GetHandZone() ||
++                zone == GetPlayerMinions() ||
++                zone == GetOpponentMinions() ||
++                zone == GetPlayerSecrets() ||
++                zone == GetOpponentSecrets();
 +        }
 +
 +        protected virtual void MoveMouseToCard(Card card)
 +        {
-+            if (card.GetZone()?.GetType() == typeof(ZoneHand))
++            if (card.GetAccessibleZone()?.GetType() == typeof(ZoneHand))
 +            {
 +                if (!card.IsMousedOver())
 +                {
@@ -6128,7 +6165,7 @@ index 0000000..e6ada19
 +
 +        protected void SeePlayerHand()
 +        {
-+            var playerHand = GameState.Get().GetFriendlySidePlayer().GetHandZone();
++            var playerHand = GetPlayerHand();
 +            if (playerHand.GetCardCount() == 0)
 +            {
 +                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_SEE_ZONE_PLAYER_HAND_EMPTY));
@@ -6139,7 +6176,12 @@ index 0000000..e6ada19
 +            }
 +        }
 +
-+        private void SeeZone(Zone zone)
++        protected virtual IZone GetPlayerHand()
++        {
++            return GameState.Get().GetFriendlySidePlayer().GetHandZone();
++        }
++
++        private void SeeZone(IZone zone)
 +        {
 +            if (zone == null)
 +            {
@@ -6575,7 +6617,7 @@ index 0000000..e6ada19
 +
 +            if (IsValidOption(card))
 +            {
-+                if (card.GetZone() == playerHand)
++                if (card.GetAccessibleZone() == playerHand)
 +                {
 +                    speeches.Add(AccessibleSpeech.GAMEPLAY_PLAY_CARD_HELP);
 +
@@ -6584,7 +6626,7 @@ index 0000000..e6ada19
 +                        speeches.Add(AccessibleSpeech.GAMEPLAY_TRADE_CARD_HELP);
 +                    }
 +                }
-+                else if (card.GetZone() == playerBattlefield)
++                else if (card.GetAccessibleZone() == playerBattlefield)
 +                {
 +                    speeches.Add(AccessibleSpeech.GAMEPLAY_ATTACK_WITH_MINION_HELP);
 +                }
@@ -6599,7 +6641,7 @@ index 0000000..e6ada19
 +            }
 +            else
 +            {
-+                if (card.GetZone() == playerHand)
++                if (card.GetAccessibleZone() == playerHand)
 +                {
 +                    readManaFirst = true;
 +                }
@@ -6636,11 +6678,11 @@ index 0000000..e6ada19
 +        }
 +
 +        #region Tutorial stuff
-+        private Dictionary<Zone, Action> m_zoneSelectedListeners = new Dictionary<Zone, Action>();
++        private Dictionary<IZone, Action> m_zoneSelectedListeners = new Dictionary<IZone, Action>();
 +        private Dictionary<Card, Action<AccessibleCard>> m_cardSelectedListeners = new Dictionary<Card, Action<AccessibleCard>>();
 +        private Dictionary<Card, Action> m_summoningMinionListeners = new Dictionary<Card, Action>();
 +
-+        private void OnZoneSelected(Zone zone)
++        private void OnZoneSelected(IZone zone)
 +        {
 +            if (m_zoneSelectedListeners.ContainsKey(zone))
 +            {
@@ -6651,13 +6693,15 @@ index 0000000..e6ada19
 +
 +        private void OnCardSelected(Card card, AccessibleCard accessibleCard)
 +        {
-+            OnZoneSelected(card.GetZone());
++            OnZoneSelected(card.GetAccessibleZone());
 +
 +            if (m_cardSelectedListeners.ContainsKey(card))
 +            {
 +                m_cardSelectedListeners[card](accessibleCard);
 +                m_cardSelectedListeners.Remove(card);
 +            }
++
++            OnCardHovered(card);
 +        }
 +
 +        private void OnSummoningMinion(Card card)
@@ -6842,6 +6886,11 @@ index 0000000..e6ada19
 +        }
 +
 +        internal virtual void OnMainActionStep()
++        {
++            // No-op
++        }
++
++        protected virtual void OnCardHovered(Card card)
 +        {
 +            // No-op
 +        }
@@ -11744,10 +11793,10 @@ index 0000000..3474fa4
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleKey.cs b/Assembly-CSharp/Accessibility/AccessibleKey.cs
 new file mode 100644
-index 0000000..54c003e
+index 0000000..f1a40eb
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleKey.cs
-@@ -0,0 +1,410 @@
+@@ -0,0 +1,420 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using UnityEngine;
@@ -11883,6 +11932,16 @@ index 0000000..54c003e
 +        public static AccessibleKey BATTLEGROUNDS_READ_LEADERBOARD = CreateKey(KeyCode.L);
 +        public static AccessibleKey BATTLEGROUNDS_READ_RACES_IN_GAME = CreateKey(KeyCode.O);
 +        public static AccessibleKey BATTLEGROUNDS_READ_HERO_BUDDY = CreateKey(KeyCode.D);
++
++        public static AccessibleKey BATTLEGROUNDS_DUOS_PASS_CARD = CreateKey(KeyCode.Space);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_SWITCH_TO_TEAMMATES_BOARD = CreateKey(KeyCode.Tab, false, true);
++
++        public static AccessibleKey BATTLEGROUNDS_DUOS_READ_LAST_PINGED_CARD = CreateKey(KeyCode.Semicolon);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_JUMP_TO_LAST_PINGED_CARD = CreateKey(KeyCode.Semicolon, true);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_PING_CHECK = CreateKey(KeyCode.Equals, true);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_PING_CROSS = CreateKey(KeyCode.X, true);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_PING_WARP = CreateKey(KeyCode.Space, true);
++        public static AccessibleKey BATTLEGROUNDS_DUOS_PING_QUESTION = CreateKey(KeyCode.Slash, true);
 +        #endregion
 +
 +        #region Dev Utils
@@ -18020,12 +18079,14 @@ index 0000000..20d9067
 +}
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
 new file mode 100644
-index 0000000..68f943a
+index 0000000..d15ef69
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
-@@ -0,0 +1,1611 @@
+@@ -0,0 +1,2063 @@
 +﻿using System;
++using System.Collections;
 +using System.Collections.Generic;
++using System.Linq;
 +using System.Text;
 +using UnityEngine;
 +
@@ -18050,6 +18111,10 @@ index 0000000..68f943a
 +
 +        private bool m_buyingCard;
 +        private bool m_sellingMinion;
++
++        private bool m_passingCard;
++        private bool m_passingCardWaitingForHold;
++        private bool m_viewingTeammatesBoard;
 +
 +        private bool m_isShopPhase;
 +        private bool m_isCombatPhase;
@@ -18268,10 +18333,28 @@ index 0000000..68f943a
 +            m_movingMinionWaitingForHold = false;
 +            m_buyingCard = false;
 +            m_sellingMinion = false;
++            m_passingCard = false;
++            m_passingCardWaitingForHold = false;
 +		}
 +
 +		internal override void ReadPlayerResources()
 +		{
++            if (m_viewingTeammatesBoard)
++            {
++                var viewer = TeammateBoardViewer.Get().GetViewer<TeammateGameModeButtonViewer>();
++                int teammateGold = viewer.GetTeammateGold();
++                int teammateMaxGold = viewer.GetTeammateMaxGold();
++                if (teammateGold != teammateMaxGold)
++                {
++                    AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_READ_PLAYER_GOLD_CURRENT_AND_TOTAL, teammateGold, teammateMaxGold));
++                }
++                else
++                {
++                    AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_READ_PLAYER_GOLD, teammateGold));
++                }
++                return;
++            }
++
 +            var player = GameState.Get().GetFriendlySidePlayer();
 +            int availableGold = player.GetNumAvailableResources();
 +            int totalGold = player.GetTag(GAME_TAG.RESOURCES);
@@ -18398,6 +18481,9 @@ index 0000000..68f943a
 +		{
 +            HandleGeneralShopPhaseInput();
 +
++            // Give pings priority, otherwise they get clobbered by virtual queries.
++            HandlePingCardInput();
++
 +            // Handle virtual queries first so we can smoothly click a different key to cancel by reading something else simultaneously
 +            if (m_upgradingTavern && HandleUpgradingTavern())
 +			{
@@ -18415,6 +18501,8 @@ index 0000000..68f943a
 +			{
 +                return;
 +			}
++
++            if (GameMgr.Get().IsBattlegroundDuoGame() && m_heldCard == null) HandleDuosPortalInput();
 +
 +            switch(m_curState)
 +            {
@@ -18471,10 +18559,32 @@ index 0000000..68f943a
 +                case AccessibleGameState.READING_LEADERBOARD:
 +                    HandleReadLeaderboardInput();
 +                    return;
++                    case AccessibleGameState.PASSING_CARD:
++                    HandleCheckStatusKeys();
++                    HandlePassingCard();
++                    return;
++                    case AccessibleGameState.VIEWING_TEAMMATES_BOARD:
++                    HandleCardReadingInput();
++                    HandleCheckStatusKeys();
++                    HandleViewingTeammatesBoard();
++                    return;
 +                default:
 +                    return;
 +            }
 +		}
++
++        private void HandleDuosPortalInput()
++        {
++            if (AccessibleKey.BATTLEGROUNDS_DUOS_SWITCH_TO_TEAMMATES_BOARD.IsPressed())
++            {
++                ClickDuosPortal();
++            }
++        }
++
++        private static void ClickDuosPortal()
++        {
++            TeammateBoardViewer.Get().GetDuosPortal()?.PortalPushed();
++        }
 +
 +        protected override void HandleCheckStatusKeys()
 +        {
@@ -18529,7 +18639,7 @@ index 0000000..68f943a
 +			}
 +
 +            m_cardBeingRead = new AccessibleBattlegroundsHeroBuddyCard(this, heroBuddyCard);
-+            m_curZone = heroBuddyCard.GetZone();
++            m_curZone = heroBuddyCard.GetAccessibleZone();
 +            m_cardBeingRead.ReadLine();
 +		}
 +
@@ -18589,6 +18699,13 @@ index 0000000..68f943a
 +
 +            HandleForcedConfirmOrCancel(ConfirmActionByClicking, CancelActionWithHeldCard);
 +		}
++
++        private void HandlePassingCard()
++        {
++            AccessibleInputMgr.MoveMouseTo(TeammateBoardViewer.Get().GetDuosPortal());
++
++            HandleForcedConfirmOrCancel(ConfirmActionByClicking, CancelActionWithHeldCard, true);
++        }
 +
 +		private bool HandleFreezingTavern()
 +		{
@@ -18703,10 +18820,16 @@ index 0000000..68f943a
 +                m_movingMinionWaitingForHold = false;
 +                m_movingMinion = true;
 +			}
++            else if (m_passingCardWaitingForHold)
++            {
++                m_passingCardWaitingForHold = false;
++                m_passingCard = true;
++            }
 +
 +            m_prevState = m_curState;
 +            m_prevResponseMode = m_curResponseMode;
 +            m_curResponseMode = GameState.Get().GetResponseMode();
++            m_viewingTeammatesBoard = IsViewingTeammatesBoard();
 +
 +            // Proper states
 +            if (!m_playerTurn)
@@ -18726,6 +18849,15 @@ index 0000000..68f943a
 +                    {
 +                        var spellName = AccessibleSpeechUtils.GetEntityName(m_heldCard.GetEntity());
 +                        AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_BUY_MINION, spellName));
++                    }
++                }
++                else if (m_passingCard)
++                {
++                    m_curState = AccessibleGameState.PASSING_CARD;
++                    if (m_prevState != m_curState)
++                    {
++                        var cardName = AccessibleSpeechUtils.GetEntityName(m_heldCard.GetEntity());
++                        AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_QUERY_PASS_CARD, cardName));
 +                    }
 +                }
 +                else if (m_heldCard.GetEntity().IsMinion())
@@ -18760,7 +18892,7 @@ index 0000000..68f943a
 +							}
 +						}
 +					}
-+                    else
++                    else if (m_prevState != AccessibleGameState.PASSING_CARD)
 +					{
 +						m_curState = AccessibleGameState.SUMMONING_MINION;
 +					}
@@ -18769,6 +18901,10 @@ index 0000000..68f943a
 +                {
 +                    m_curState = AccessibleGameState.PLAYING_CARD;
 +                }
++            }
++            else if (m_viewingTeammatesBoard)
++            {
++                m_curState = AccessibleGameState.VIEWING_TEAMMATES_BOARD;
 +            }
 +            else if (GameState.Get().IsInMainOptionMode())
 +            {
@@ -18800,6 +18936,15 @@ index 0000000..68f943a
 +            }
 +		}
 +
++        private bool IsViewingTeammatesBoard()
++        {
++            if (!GameMgr.Get().IsBattlegroundDuoGame())
++            {
++                return false;
++            }
++            return TeammateBoardViewer.Get()?.IsViewingTeammate() ?? false;
++        }
++
 +		private void ReadStateAfterClosingLeaderboardIfNecessary()
 +		{
 +            if (m_prevState == m_curState || m_prevState != AccessibleGameState.READING_LEADERBOARD)
@@ -18811,14 +18956,14 @@ index 0000000..68f943a
 +			{
 +                // Reread zone regardless
 +                var card = m_cardBeingRead.GetCard();
-+				ReadZoneChangeIfNecessary(card, null, card.GetZone(), true);
++				ReadZoneChangeIfNecessary(card, null, card.GetAccessibleZone(), true);
 +				m_cardBeingRead.Reset();
 +                var speech = m_cardBeingRead.GetLine(0);
 +
 +				if (ShouldReadCardAsList(card))
 +				{
-+					var zonePos = card.GetZone().FindCardPos(card); // card.GetZonePosition() isn't trustworthy. Wasn't working for secrets
-+					AccessibilityMgr.Output(this, AccessibleSpeech.MENU_OPTION(speech, zonePos, card.GetZone().GetCardCount()));
++					var zonePos = card.GetAccessibleZone().FindCardPos(card); // card.GetAccessibleZonePosition() isn't trustworthy. Wasn't working for secrets
++					AccessibilityMgr.Output(this, AccessibleSpeech.MENU_OPTION(speech, zonePos, card.GetAccessibleZone().GetCardCount()));
 +				}
 +                else
 +				{
@@ -18937,7 +19082,26 @@ index 0000000..68f943a
 +            }
 +            else if (AccessibleKey.SPACE.IsPressed())
 +			{
-+                ClickCardForMoving();
++                ClickCardForMovingOrPassing();
++			}
++        }
++
++        private void HandleViewingTeammatesBoard()
++        {
++            HandleZoneInput();
++            HandleZoneSelection();
++
++            if (AccessibleKey.FREEZE_TAVERN.IsPressed())
++			{
++                QueryFreezeOrUnfreezeTavern();
++			}
++            else if (AccessibleKey.UPGRADE_TAVERN.IsPressed())
++			{
++                QueryUpgradeTavern();
++			}
++            else if (AccessibleKey.REFRESH_TAVERN.IsPressed())
++			{
++                QueryRefreshTavern();
 +			}
 +        }
 +
@@ -18973,37 +19137,44 @@ index 0000000..68f943a
 +            AccessibleInputMgr.Click(card);
 +		}
 +
-+        private void ClickCardForMoving()
++        private void ClickCardForMovingOrPassing()
 +        {
 +            if (m_cardBeingRead == null)
 +            {
 +                return;
 +            }
 +
-+			var card = m_cardBeingRead.GetCard();
++            var card = m_cardBeingRead.GetCard();
 +
 +            var playerBattlefield = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
++            var playerHand = GameState.Get().GetFriendlySidePlayer().GetHandZone();
 +
-+            if (card.GetZone() != playerBattlefield || playerBattlefield.GetCardCount() <= 1)
-+			{
-+                return;
-+			}
++            if (card.GetAccessibleZone() == playerBattlefield && playerBattlefield.GetCardCount() > 1)
++            {
++                ResetState();
 +
-+			ResetState();
++                m_movingMinionWaitingForHold = true;
 +
-+            m_movingMinionWaitingForHold = true;
++                AccessibleInputMgr.ClickLeftMouseButton();
++            }
++            else if (card.GetAccessibleZone() == playerHand && GameMgr.Get().IsBattlegroundDuoGame())
++            {
++                ResetState();
 +
-+            AccessibleInputMgr.ClickLeftMouseButton();
++                m_passingCardWaitingForHold = true;
++
++                AccessibleInputMgr.ClickLeftMouseButton();
++            }
 +        }
 +
-+		private void QueryRefreshTavern()
++        private void QueryRefreshTavern()
 +		{
 +            ResetState();
 +            StopReadingCard();
 +
-+            var refreshButtonCard = GetGameState().GetRefreshButtonCard();
++            var refreshButtonCard = GetRefreshButtonCard();
 +
-+            if (!refreshButtonCard.IsInputEnabled())
++            if (!m_viewingTeammatesBoard && !refreshButtonCard.IsInputEnabled())
 +            {
 +                return;
 +            }
@@ -19058,9 +19229,9 @@ index 0000000..68f943a
 +            ResetState();
 +            StopReadingCard();
 +
-+            var freezeButtonCard = GetGameState().GetFreezeButtonCard();
++            var freezeButtonCard = GetFreezeButtonCard();
 +
-+            if (!freezeButtonCard.IsInputEnabled())
++            if (!m_viewingTeammatesBoard && !freezeButtonCard.IsInputEnabled())
 +            {
 +                return;
 +            }
@@ -19075,9 +19246,9 @@ index 0000000..68f943a
 +            ResetState();
 +            StopReadingCard();
 +
-+            var freezeButtonCard = GetGameState().GetFreezeButtonCard();
++            var freezeButtonCard = GetFreezeButtonCard();
 +
-+            if (!freezeButtonCard.IsInputEnabled())
++            if (!m_viewingTeammatesBoard && !freezeButtonCard.IsInputEnabled())
 +            {
 +                return;
 +            }
@@ -19100,9 +19271,9 @@ index 0000000..68f943a
 +            ResetState();
 +            StopReadingCard();
 +
-+            var upgradeButtonCard = GetGameState().GetTavernUpgradeButtonCard();
++            var upgradeButtonCard = GetTavernUpgradeButtonCard();
 +
-+            if (!upgradeButtonCard.IsInputEnabled())
++            if (!m_viewingTeammatesBoard && !upgradeButtonCard.IsInputEnabled())
 +            {
 +                return;
 +            }
@@ -19121,6 +19292,33 @@ index 0000000..68f943a
 +            var upgradeButtonCard = GetGameState().GetTavernUpgradeButtonCard();
 +            ClickButtonCard(upgradeButtonCard);
 +		}
++
++        private Card GetFreezeButtonCard()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateGameModeButtonViewer>().GetFreezeButtonCard();
++            }
++            return GetGameState().GetFreezeButtonCard();
++        }
++
++        private Card GetRefreshButtonCard()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateGameModeButtonViewer>().GetRefreshButtonCard();
++            }
++            return GetGameState().GetRefreshButtonCard();
++        }
++
++        private Card GetTavernUpgradeButtonCard()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateGameModeButtonViewer>().GetTavernUpgradeButtonCard();
++            }
++            return GetGameState().GetTavernUpgradeButtonCard();
++        }
 +
 +		private TB_BaconShop GetGameState()
 +		{
@@ -19167,6 +19365,27 @@ index 0000000..68f943a
 +            // TODO: Figure out a better way of handling this
 +            m_tavernFrozen = !m_tavernFrozen;
 +		}
++
++        protected override void OnCardHovered(Card card)
++        {
++            var entity = card.GetEntity();
++            if (entity.HasTag(GAME_TAG.BACON_PAIR_CANDIDATE))
++            {
++                HSASoundMgr.Get().Play(HSASound.BATTLEGROUNDS_HOVER_PAIR_CANDIDATE);
++            }
++            else if (entity.HasTag(GAME_TAG.BACON_TRIPLE_CANDIDATE))
++            {
++                HSASoundMgr.Get().Play(HSASound.BATTLEGROUNDS_HOVER_TRIPLE_CANDIDATE);
++            }
++            else if (entity.HasTag(GAME_TAG.BACON_DUO_PAIR_CANDIDATE_TEAMMATE))
++            {
++                HSASoundMgr.Get().Play(HSASound.BATTLEGROUNDS_HOVER_TEAMMATES_PAIR_CANDIDATE);
++            }
++            else if (entity.HasTag(GAME_TAG.BACON_DUO_TRIPLE_CANDIDATE_TEAMMATE))
++            {
++                HSASoundMgr.Get().Play(HSASound.BATTLEGROUNDS_HOVER_TEAMMATES_TRIPLE_CANDIDATE);
++            }
++        }
 +
 +        #region Moving Minions
 +
@@ -19291,7 +19510,7 @@ index 0000000..68f943a
 +
 +        protected override void MoveMouseToCard(Card card)
 +        {
-+            if (card.GetZone()?.GetType() == typeof(ZoneHand))
++            if (card.GetAccessibleZone()?.GetType() == typeof(ZoneHand))
 +            {
 +				// Note: Unlike in a game of traditional Hearthstone, we can't trust mousedOver as when Bob is speaking or highlighting certain
 +				// buttons (e.g. in the tutorial) the cards will have their input disabled which messes with mouse over state
@@ -19305,7 +19524,7 @@ index 0000000..68f943a
 +					{
 +                        var mousedOverCard = GetMousedOverCardRegardlessOfInput();
 +
-+                        if (mousedOverCard != null && mousedOverCard.GetZone() is ZonePlay)
++                        if (mousedOverCard != null && mousedOverCard.GetAccessibleZone() is ZonePlay)
 +						{
 +                            // In Battlegrounds, lists of effects can get large enough to the point that it covers cards in hand so we need to hide the tooltip
 +                            // or we won't be able to hover the card in hand
@@ -19432,6 +19651,8 @@ index 0000000..68f943a
 +
 +        private string m_prevWaitingText; // Used for reading x players ready whenever a new player becomes ready
 +
++        private AccessibleListOfItems<AccessibleCard> m_teammatesMulliganCards;
++
 +		private void HandleChooseHeroInput()
 +        {
 +            if (m_accessibleMulliganCards == null)
@@ -19444,32 +19665,53 @@ index 0000000..68f943a
 +                m_justReconnected = false;
 +            }
 +
-+            if (AccessibleKey.CONFIRM.IsPressed())
-+            {
-+                if (m_waitingForOpponentsToChooseHero)
-+				{
-+                    ReadNumberOfReadyPlayers(true);
-+				}
-+                else if (m_confirmingHero)
-+                {
-+                    MulliganManager.Get().OnMulliganButtonReleased(null);
-+                }
-+                else
-+                {
-+                    var focusedCard = m_accessibleMulliganCards.GetItemBeingRead();
-+                    AccessibleInputMgr.MoveMouseTo(focusedCard.GetCard());
-+                    AccessibleInputMgr.ClickLeftMouseButton();
++            var wasViewingTeammatesBoard = m_viewingTeammatesBoard;
++            m_viewingTeammatesBoard = IsViewingTeammatesBoard();
 +
-+                    m_confirmingHero = true;
-+                    AccessibilityMgr.Output(this, LocalizedText.GLOBAL_PRESS_ENTER_TO_CONFIRM_OR_BACKSPACE_TO_CANCEL);
++            if (m_viewingTeammatesBoard || m_teammatesMulliganCards != null)
++            {
++                HandleDuosPortalInput();
++            }
++
++            var mulliganCards = GetCurrentMulliganCards();
++
++            if (wasViewingTeammatesBoard != m_viewingTeammatesBoard)
++            {
++                mulliganCards?.StartReading();
++            }
++
++            HandlePingCardInput();
++
++            if (!m_viewingTeammatesBoard)
++            {
++                if (AccessibleKey.CONFIRM.IsPressed())
++                {
++                    if (m_waitingForOpponentsToChooseHero)
++                    {
++                        ReadNumberOfReadyPlayers(true);
++                    }
++                    else if (m_confirmingHero)
++                    {
++                        MulliganManager.Get().OnMulliganButtonReleased(null);
++                    }
++                    else
++                    {
++                        var focusedCard = m_accessibleMulliganCards.GetItemBeingRead();
++                        AccessibleInputMgr.MoveMouseTo(focusedCard.GetCard());
++                        AccessibleInputMgr.ClickLeftMouseButton();
++
++                        m_confirmingHero = true;
++                        AccessibilityMgr.Output(this, LocalizedText.GLOBAL_PRESS_ENTER_TO_CONFIRM_OR_BACKSPACE_TO_CANCEL);
++                    }
++                }
++                else if (AccessibleKey.BACK.IsPressed() && m_confirmingHero)
++                {
++                    m_confirmingHero = false;
++                    m_accessibleMulliganCards.StartReading();
 +                }
 +            }
-+            else if (AccessibleKey.BACK.IsPressed() && m_confirmingHero)
-+			{
-+                m_confirmingHero = false;
-+                m_accessibleMulliganCards.StartReading();
-+			}
-+            else if (AccessibleKey.BATTLEGROUNDS_READ_RACES_IN_GAME.IsPressed())
++
++            if (AccessibleKey.BATTLEGROUNDS_READ_RACES_IN_GAME.IsPressed())
 +			{
 +                ReadRacesAndAnomaly();
 +			}
@@ -19479,8 +19721,8 @@ index 0000000..68f943a
 +			}
 +            else if (!m_confirmingHero && !m_waitingForOpponentsToChooseHero)
 +            {
-+                m_accessibleMulliganCards.HandleAccessibleInput();
-+                AccessibleInputMgr.MoveMouseTo(m_accessibleMulliganCards.GetItemBeingRead().GetCard());
++                mulliganCards.HandleAccessibleInput();
++                AccessibleInputMgr.MoveMouseTo(mulliganCards.GetItemBeingRead().GetCard());
 +            }
 +
 +            // Re-read banner everytime a new player becomes ready while waiting for the game to start
@@ -19488,6 +19730,11 @@ index 0000000..68f943a
 +			{
 +                ReadNumberOfReadyPlayers();
 +			}
++        }
++
++        private AccessibleListOfItems<AccessibleCard> GetCurrentMulliganCards()
++        {
++            return m_viewingTeammatesBoard ? m_teammatesMulliganCards : m_accessibleMulliganCards;
 +        }
 +
 +		internal override void OnEnterMultiplayerWaitingArea(List<Card> startingCards, string mulliganBannerText, string mulliganBannerSubtitleText, NormalButton confirmButton)
@@ -19547,6 +19794,270 @@ index 0000000..68f943a
 +            m_prevWaitingText = waitingText;
 +		}
 +
++        internal void OnTeammateMulliganEntitiesReceived(List<Card> cards)
++        {
++            var teammatesMulliganCards = cards.Select((c) => (AccessibleCard)new AccessibleBattlegroundsChooseHeroCard(this, c)).ToList();
++            m_teammatesMulliganCards = new AccessibleListOfItems<AccessibleCard>(this, teammatesMulliganCards);
++        }
++
++        internal void OnTeammateChoseHero(Card chosenHero)
++        {
++            AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATE_CHOSE_HERO, chosenHero.GetEntity().GetName()));
++
++            if (m_viewingTeammatesBoard)
++            {
++                ClickDuosPortal();
++            }
++        }
++
++        #endregion
++
++        #region Duos Zones
++        protected override IZone GetPlayerHand()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateHandViewer>().GetVirtualZone();
++            }
++            return base.GetPlayerHand();
++        }
++
++        protected override IZone GetPlayerMinions()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateMinionViewer>().GetFriendlyVirtualZone();
++            }
++            return base.GetPlayerMinions();
++        }
++
++        protected override IZone GetOpponentMinions()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateMinionViewer>().GetOpposingVirtualZone();
++            }
++            return base.GetOpponentMinions();
++        }
++
++        protected override IZone GetPlayerSecrets()
++        {
++            if (m_viewingTeammatesBoard)
++            {
++                return TeammateBoardViewer.Get().GetViewer<TeammateSecretViewer>().teammateSecretZone;
++            }
++            return base.GetPlayerSecrets();
++        }
++        #endregion
++
++        #region Duos pings
++        internal void OnEntityPinged(Actor actor, TEAMMATE_PING_TYPE pingType)
++        {
++            string fullName = GetPingedActorName(actor);
++            var pingName = GetPingName(pingType);
++
++            var msg = LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_ENTITY_PINGED, fullName, pingName);
++            AccessibilityMgr.Output(this, msg);
++            AccessibleHistoryMgr.Get().AddEntry(msg);
++            PlayPingSound(pingType);
++        }
++
++        internal static string GetPingName(TEAMMATE_PING_TYPE pingType)
++        {
++            LocalizationKey key = null;
++            switch (pingType)
++            {
++                case TEAMMATE_PING_TYPE.EXCLAMATION:
++                key = LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_PING_EXCLAMATION;
++                break;
++                case TEAMMATE_PING_TYPE.CHECK:
++                key = LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CHECK;
++                break;
++                case TEAMMATE_PING_TYPE.CROSS:
++                key = LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CROSS;
++                break;
++                case TEAMMATE_PING_TYPE.WARP:
++                key = LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_PING_WARP;
++                break;
++                case TEAMMATE_PING_TYPE.QUESTION:
++                key = LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_PING_QUESTION;
++                break;
++            }
++
++            if (key != null)
++            {
++                return LocalizationUtils.Get(key);
++            }
++            return "";
++        }
++
++        private static void PlayPingSound(TEAMMATE_PING_TYPE pingType)
++        {
++            HSASound sound = null;
++            switch (pingType)
++            {
++                case TEAMMATE_PING_TYPE.CHECK:
++                sound = HSASound.BATTLEGROUNDS_DUOS_PING_CHECK;
++                break;
++                case TEAMMATE_PING_TYPE.CROSS:
++                sound = HSASound.BATTLEGROUNDS_DUOS_PING_CROSS;
++                break;
++                case TEAMMATE_PING_TYPE.WARP:
++                sound = HSASound.BATTLEGROUNDS_DUOS_PING_WARP;
++                break;
++                case TEAMMATE_PING_TYPE.QUESTION:
++                sound = HSASound.BATTLEGROUNDS_DUOS_PING_QUESTION;
++                break;
++            }
++
++            if (sound != null)
++            {
++                HSASoundMgr.Get().Play(sound);
++            }
++        }
++
++        private static string GetPingedActorName(Actor actor)
++        {
++            var actorName = AccessibleSpeechUtils.GetName(actor.GetEntity());
++            var fullName = LocalizationUtils.Format(TeammateBoardViewer.Get().IsActorTeammates(actor) ? LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATES_ENTITY_FULL_NAME : LocalizationKey.GAMEPLAY_DIFF_PLAYER_ENTITY_FULL_NAME, actorName);
++            return fullName;
++        }
++
++        private IEnumerator FastApplyPingToActor(Actor actor, TEAMMATE_PING_TYPE pingType)
++        {
++            if (actor.ArePingsBlocked())
++            {
++                yield break;
++            }
++
++            if (actor.GetActivePingType() == pingType)
++            {
++                actor.RemovePingAndNotifyTeammate();
++                yield break;
++            }
++            else if (actor.GetActivePingType() != TEAMMATE_PING_TYPE.INVALID)
++            {
++                actor.RemovePingAndNotifyTeammate();
++                yield return new WaitForSeconds(0.25f);
++            }
++
++            Network.Get().SendPingTeammateEntity(actor.GetEntity().GetEntityId(), (int)pingType, TeammateBoardViewer.Get().IsActorTeammates(actor));
++            actor.ActivatePing(pingType);
++        }
++
++        private Actor GetActorToPing()
++        {
++            if (m_curPhase == AccessibleGamePhase.MULLIGAN)
++            {
++                var mulliganCards = GetCurrentMulliganCards();
++                return mulliganCards?.GetItemBeingRead()?.GetCard()?.GetActor();
++            }
++            else if (m_freezingTavern)
++            {
++                return GetFreezeButtonCard()?.GetActor();
++            }
++            else if (m_refreshingTavern)
++            {
++                return GetRefreshButtonCard()?.GetActor();
++            }
++            else if (m_upgradingTavern)
++            {
++                return GetTavernUpgradeButtonCard()?.GetActor();
++            }
++
++            return m_cardBeingRead?.GetCard()?.GetActor();
++        }
++
++        private void ReadLastPingedCard()
++        {
++            var actor = TeammatePingWheelManager.Get()?.GetLastPingedCard()?.GetActor();
++
++            if (actor == null)
++            {
++                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.BATTLEGROUNDS_DUOS_GAMEPLAY_NO_PING));
++            }
++            else
++            {
++                var actorName = GetPingedActorName(actor);
++                AccessibilityMgr.Output(this, AccessibleSpeechUtils.CombineWordsWithColon(actorName, GetPingName(actor.GetActivePingType())));
++            }
++        }
++
++        private IEnumerator JumpToLastPingedCard()
++        {
++            var card = TeammatePingWheelManager.Get()?.GetLastPingedCard();
++            if (card == null)
++            {
++                yield break;
++            }
++            if (TeammateBoardViewer.Get().IsActorTeammates(card.GetActor()) && !m_viewingTeammatesBoard)
++            {
++                ClickDuosPortal();
++                while (!TeammateBoardViewer.Get().IsViewingTeammate())
++                {
++                    yield return null;
++                }
++            }
++            if (m_curPhase == AccessibleGamePhase.MULLIGAN)
++            {
++                var mulliganCards = GetCurrentMulliganCards();
++                for (int i = 0; i < mulliganCards.Count; i++)
++                {
++                    if (mulliganCards.Items[i].GetCard() == card)
++                    {
++                        mulliganCards.StartReadingFromIndex(i);
++                        break;
++                    }
++                }
++            }
++            else
++            {
++                FocusOnCard(card, true);
++            }
++        }
++
++        private void HandlePingCardInput()
++        {
++            if (!GameMgr.Get().IsBattlegroundDuoGame() || m_heldCard != null)
++            {
++                return;
++            }
++
++            if (AccessibleKey.BATTLEGROUNDS_DUOS_READ_LAST_PINGED_CARD.IsPressed())
++            {
++                ReadLastPingedCard();
++            }
++            else if (AccessibleKey.BATTLEGROUNDS_DUOS_JUMP_TO_LAST_PINGED_CARD.IsPressed())
++            {
++                Gameplay.Get().StartCoroutine(JumpToLastPingedCard());
++            }
++
++            if (!InputManager.Get().PermitDecisionMakingInput() || GetActorToPing() == null)
++            {
++                return;
++            }
++            if (AccessibleKey.BATTLEGROUNDS_DUOS_PING_CHECK.IsPressed())
++            {
++                PingCurrentCard(TEAMMATE_PING_TYPE.CHECK);
++            }
++            else if (AccessibleKey.BATTLEGROUNDS_DUOS_PING_CROSS.IsPressed())
++            {
++                PingCurrentCard(TEAMMATE_PING_TYPE.CROSS);
++            }
++            else if (AccessibleKey.BATTLEGROUNDS_DUOS_PING_QUESTION.IsPressed())
++            {
++                PingCurrentCard(TEAMMATE_PING_TYPE.QUESTION);
++            }
++            else if (AccessibleKey.BATTLEGROUNDS_DUOS_PING_WARP.IsPressed())
++            {
++                PingCurrentCard(TEAMMATE_PING_TYPE.WARP);
++            }
++        }
++
++        private void PingCurrentCard(TEAMMATE_PING_TYPE pingType)
++        {
++            Gameplay.Get().StartCoroutine(FastApplyPingToActor(GetActorToPing(), pingType));
++        }
 +        #endregion
 +
 +        #region Help
@@ -24498,6 +25009,125 @@ index 0000000..9c7d6ed
 +
 +    }
 +}
+diff --git a/Assembly-CSharp/Accessibility/HSASound.cs b/Assembly-CSharp/Accessibility/HSASound.cs
+new file mode 100644
+index 0000000..35c0d9f
+--- /dev/null
++++ b/Assembly-CSharp/Accessibility/HSASound.cs
+@@ -0,0 +1,62 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.IO;
++using UnityEngine;
++using UnityEngine.Networking;
++
++namespace Accessibility
++{
++    class HSASound
++    {
++        // Battlegrounds hover
++        public static HSASound BATTLEGROUNDS_HOVER_PAIR_CANDIDATE = CreateSound("BATTLEGROUNDS_HOVER_PAIR_CANDIDATE.wav");
++        public static HSASound BATTLEGROUNDS_HOVER_TRIPLE_CANDIDATE = CreateSound("BATTLEGROUNDS_HOVER_TRIPLE_CANDIDATE.wav");
++        public static HSASound BATTLEGROUNDS_HOVER_TEAMMATES_PAIR_CANDIDATE = CreateSound("BATTLEGROUNDS_HOVER_TEAMMATES_PAIR_CANDIDATE.wav");
++        public static HSASound BATTLEGROUNDS_HOVER_TEAMMATES_TRIPLE_CANDIDATE = CreateSound("BATTLEGROUNDS_HOVER_TEAMMATES_TRIPLE_CANDIDATE.wav");
++
++        // Battlegrounds Duos pings
++        public static HSASound BATTLEGROUNDS_DUOS_PING_CHECK = CreateSound("BATTLEGROUNDS_DUOS_PING_CHECK.wav");
++        public static HSASound BATTLEGROUNDS_DUOS_PING_CROSS = CreateSound("BATTLEGROUNDS_DUOS_PING_CROSS.wav");
++        public static HSASound BATTLEGROUNDS_DUOS_PING_WARP = CreateSound("BATTLEGROUNDS_DUOS_PING_WARP.wav");
++        public static HSASound BATTLEGROUNDS_DUOS_PING_QUESTION = CreateSound("BATTLEGROUNDS_DUOS_PING_QUESTION.wav");
++        
++        public AudioClip AudioClip {get; private set;}
++
++        public string FileName {get; private set;}
++
++        private HSASound(string fileName)
++        {
++            FileName = fileName;
++        }
++
++        private static HSASound CreateSound(string fileName)
++        {
++            var ret = new HSASound(fileName);
++            return ret;
++        }
++
++        public IEnumerator Load()
++        {
++            if (AudioClip != null)
++            {
++                AccessibilityUtils.LogFatalError($"HSASound Trying to load a clip that has already been loaded: {FileName}");
++                yield break;
++            }
++
++            var hsDirectory = Directory.GetCurrentDirectory();
++            var fullPath = Path.Combine(hsDirectory, "Accessibility", "Sounds", FileName);
++            var url = new Uri(fullPath).AbsoluteUri;
++            var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
++            yield return www.SendWebRequest();
++            try
++            {
++                AudioClip = DownloadHandlerAudioClip.GetContent(www);
++            }
++            catch (Exception x)
++            {
++                AccessibilityUtils.LogFatalError($"HSASound: Could not load clip {FileName}.\n{x}\n{x.StackTrace}");
++            }
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/Assembly-CSharp/Accessibility/HSASoundMgr.cs b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
+new file mode 100644
+index 0000000..56cc370
+--- /dev/null
++++ b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
+@@ -0,0 +1,44 @@
++using System;
++using System.Collections;
++using UnityEngine;
++
++namespace Accessibility
++{
++    class HSASoundMgr : MonoBehaviour
++    {
++        private AudioSource m_audioSource;
++
++        private static HSASoundMgr s_instance;
++
++        private void Awake()
++        {
++            s_instance = this;
++            m_audioSource = GetComponent<AudioSource>();
++        }
++
++        public static HSASoundMgr Get()
++        {
++            return s_instance;
++        }
++
++        public void Play(HSASound sound)
++        {
++            AccessibilityUtils.LogDebug($"HSASound: Playing {sound.FileName}");
++            if (sound.AudioClip == null)
++            {
++                StartCoroutine(LoadAndPlay(sound));
++                return;
++            }
++            m_audioSource.PlayOneShot(sound.AudioClip);
++        }
++
++        private IEnumerator LoadAndPlay(HSASound sound)
++        {
++            yield return sound.Load();
++            if (sound.AudioClip != null)
++            {
++                m_audioSource.PlayOneShot(sound.AudioClip);
++            }
++        }
++    }
++}
 diff --git a/Assembly-CSharp/Accessibility/HSASpeech.cs b/Assembly-CSharp/Accessibility/HSASpeech.cs
 new file mode 100644
 index 0000000..9473d38
@@ -24631,6 +25261,22 @@ index 0000000..7cd6137
 +        }
 +    }
 +}
+diff --git a/Assembly-CSharp/Accessibility/IZone.cs b/Assembly-CSharp/Accessibility/IZone.cs
+new file mode 100644
+index 0000000..7bb6ad7
+--- /dev/null
++++ b/Assembly-CSharp/Accessibility/IZone.cs
+@@ -0,0 +1,9 @@
++namespace Accessibility
++{
++    interface IZone
++    {
++        int GetCardCount();
++        Card GetCardAtSlot(int slot);
++        int FindCardPos(Card card);
++    }
++}
+\ No newline at end of file
 diff --git a/Assembly-CSharp/Accessibility/InGameSystemTests.cs b/Assembly-CSharp/Accessibility/InGameSystemTests.cs
 new file mode 100644
 index 0000000..d12f6e9
@@ -25543,10 +26189,10 @@ index 0000000..fb167df
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 0000000..0b7b939
+index 0000000..cfa2d80
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1199 @@
+@@ -0,0 +1,1217 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -26097,6 +26743,22 @@ index 0000000..0b7b939
 +    public static LocalizationKey BATTLEGROUNDS_GAMEPLAY_READ_MY_STATS_HELP = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_GAMEPLAY_READ_MY_STATS_HELP");
 +    public static LocalizationKey BATTLEGROUNDS_GAMEPLAY_READ_RACES_IN_GAME_HELP = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_GAMEPLAY_READ_RACES_IN_GAME_HELP");
 +
++    // Battlegrounds Duos
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_QUERY_PASS_CARD = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_QUERY_PASS_CARD");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_SWITCH_TO_TEAMMATES_BOARD = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_SWITCH_TO_TEAMMATES_BOARD");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_SWITCH_TO_PLAYERS_BOARD = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_SWITCH_TO_PLAYERS_BOARD");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATE_CHOSE_HERO = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATE_CHOSE_HERO");
++
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_NO_PING = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_NO_PING");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_ENTITY_PINGED = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_ENTITY_PINGED");
++    public static LocalizationKey BATTLEGROUNDS_GAMEPLAY_CARD_PINGED_LINE = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_GAMEPLAY_CARD_PINGED_LINE");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATES_ENTITY_FULL_NAME = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_TEAMMATES_ENTITY_FULL_NAME");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_PING_EXCLAMATION = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_PING_EXCLAMATION");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CHECK = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CHECK");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CROSS = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_PING_CROSS");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_PING_WARP = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_PING_WARP");
++    public static LocalizationKey BATTLEGROUNDS_DUOS_GAMEPLAY_PING_QUESTION = CreateKey("ACCESSIBILITY_BATTLEGROUNDS_DUOS_GAMEPLAY_PING_QUESTION");
++
 +    // UI
 +    public static LocalizationKey UI_POPUP = CreateKey("ACCESSIBILITY_UI_POPUP");
 +    public static LocalizationKey UI_REWARDS_TITLE = CreateKey("ACCESSIBILITY_UI_REWARDS_TITLE");
@@ -26443,6 +27105,8 @@ index 0000000..0b7b939
 +    public static LocalizationKey SCREEN_BATTLEGROUNDS_SEE_PARTY = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_SEE_PARTY");
 +    public static LocalizationKey SCREEN_BATTLEGROUNDS_READ_STATS = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_READ_STATS");
 +    public static LocalizationKey SCREEN_BATTLEGROUNDS_OPTIONS_NARRATE_ATTACKS = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_OPTIONS_NARRATE_ATTACKS");
++    public static LocalizationKey SCREEN_BATTLEGROUNDS_SWITCH_TO_DUOS = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_SWITCH_TO_DUOS");
++    public static LocalizationKey SCREEN_BATTLEGROUNDS_SWITCH_TO_SOLO = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_SWITCH_TO_SOLO");
 +
 +    //Battlegrounds party screen
 +    public static LocalizationKey SCREEN_BATTLEGROUNDS_PARTY_MEMBER_WAITING = CreateKey("ACCESSIBILITY_SCREEN_BATTLEGROUNDS_PARTY_MEMBER_WAITING");
@@ -28548,6 +29212,66 @@ index 0000000..7b6bb02
 +		}
 +	}
 +}
+diff --git a/Assembly-CSharp/Accessibility/VirtualZone.cs b/Assembly-CSharp/Accessibility/VirtualZone.cs
+new file mode 100644
+index 0000000..d2f5c05
+--- /dev/null
++++ b/Assembly-CSharp/Accessibility/VirtualZone.cs
+@@ -0,0 +1,53 @@
++using System;
++using System.Collections.Generic;
++
++namespace Accessibility
++{
++    class VirtualZone : IZone
++    {
++        private List<Card> m_cards;
++
++        public VirtualZone()
++        {
++            m_cards = new List<Card>();
++        }
++
++        public void UpdateCardPosition(Card card, int index)
++        {
++            m_cards.Remove(card);
++            card.SetVirtualZone(this);
++            if (index > m_cards.Count)
++            {
++                m_cards.Add(card);
++                return;
++            }
++            m_cards.Insert(index, card);
++        }
++
++        public void RemoveCard(Card card)
++        {
++            m_cards.Remove(card);
++            card.ClearVirtualZone();
++        }
++
++        public Card GetCardAtSlot(int slot)
++        {
++            if (slot <= 0 || slot > m_cards.Count)
++            {
++                return null;
++            }
++            return m_cards[slot - 1];
++        }
++
++        public int GetCardCount()
++        {
++            return m_cards.Count;
++        }
++
++        public int FindCardPos(Card card)
++        {
++            return 1 + m_cards.FindIndex((Card currCard) => currCard == card);
++        }
++
++    }
++}
+\ No newline at end of file
 diff --git a/Assembly-CSharp/Accessibility/arena/AccessibleArenaDisplay.cs b/Assembly-CSharp/Accessibility/arena/AccessibleArenaDisplay.cs
 new file mode 100644
 index 0000000..ff26271
@@ -31738,10 +32462,18 @@ index ebabc8b..380f8aa 100644
  		m_rewards = new List<RewardData>(rewardDataList);
  		FixUpRewardOrigins(m_rewards);
 diff --git a/Assembly-CSharp/Actor.cs b/Assembly-CSharp/Actor.cs
-index ad23fd2..1c3a2d2 100644
+index ad23fd2..e3ebac6 100644
 --- a/Assembly-CSharp/Actor.cs
 +++ b/Assembly-CSharp/Actor.cs
-@@ -1001,11 +1001,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -1,6 +1,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.Threading;
++using Accessibility;
+ using Assets;
+ using Blizzard.BlizzardErrorMobile;
+ using Blizzard.T5.AssetManager;
+@@ -1001,11 +1002,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			return;
  		}
  		using DefLoader.DisposableCardDef cardDef = card.ShareDisposableCardDef();
@@ -31757,7 +32489,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void SetCardDef(DefLoader.DisposableCardDef cardDef)
  	{
-@@ -1095,11 +1095,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -1095,11 +1096,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		{
  			return;
  		}
@@ -31773,7 +32505,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public virtual void SetPremium(TAG_PREMIUM premium)
  	{
-@@ -1850,54 +1850,54 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -1850,54 +1851,54 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		else
  		{
  			if (m_missingCardEffect == null)
@@ -31863,7 +32595,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void SetMissingCardMaterial(Material missingCardMat)
  	{
-@@ -2051,11 +2051,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2051,11 +2052,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			return;
  		}
  		using AssetHandle<Mesh> assetHandle = AssetLoader.Get().LoadAsset<Mesh>(planeRef);
@@ -31879,7 +32611,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void UpdateDiamondCardArt()
  	{
-@@ -2106,14 +2106,14 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2106,14 +2107,14 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  				m_diamondModelShown = diamondModel;
  				if (m_diamondModelObject != null)
  				{
@@ -31901,7 +32633,7 @@ index ad23fd2..1c3a2d2 100644
  			}
  			else if ((bool)m_diamondRenderToTexture)
  			{
-@@ -2133,11 +2133,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2133,11 +2134,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			if (component != null && component.GetSharedMaterial().HasProperty("_MainTex") && assetReference != null)
  			{
  				using AssetHandle<Texture2D> assetHandle = AssetLoader.Get().LoadAsset<Texture2D>(assetReference);
@@ -31917,7 +32649,7 @@ index ad23fd2..1c3a2d2 100644
  			HighlightState componentInChildren = GetComponentInChildren<HighlightState>();
  			if (componentInChildren != null && componentInChildren.isActiveAndEnabled)
  			{
-@@ -2663,8 +2663,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2663,8 +2664,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			}
  			else
  			{
@@ -31928,7 +32660,7 @@ index ad23fd2..1c3a2d2 100644
  		}
  		UpdatePortraitTexture();
  		UpdateGhostCardEffect(RTTUpdateOnly: true);
-@@ -2759,38 +2759,38 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2759,38 +2760,38 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  				}
  			}
  			{
@@ -31946,11 +32678,11 @@ index ad23fd2..1c3a2d2 100644
 -						material3.SetFloat("_Seed", UnityEngine.Random.Range(0f, 2f));
 -					}
 +					material3.SetFloat("_LightingBlend", value);
-+				}
+ 				}
 +				if (material3.HasProperty("_Seed") && material3.GetFloat("_Seed") == 0f)
 +				{
 +					material3.SetFloat("_Seed", UnityEngine.Random.Range(0f, 2f));
- 				}
++				}
 +			}
  				return;
  			}
@@ -31990,7 +32722,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void SetPortraitDesaturation(float desaturation)
  	{
-@@ -2909,15 +2909,15 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2909,15 +2910,15 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		if (!(m_costTextMesh == null))
  		{
  			if (HasHideStats(entityDef) || entityDef.HasTag(GAME_TAG.HIDE_COST) || (entityDef.IsBaconSpell() && m_entity != null && m_entity.GetControllerSide() == Player.Side.FRIENDLY) || (!entityDef.IsBaconSpell() && UseTechLevelManaGem()) || (entityDef.IsCardButton() && entityDef.HasTriggerVisual() && (!GameMgr.Get().IsBattlegrounds() || !entityDef.HasTag(GAME_TAG.HAS_ACTIVATE_POWER))))
@@ -32013,7 +32745,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void UpdateAttackTextMesh(EntityDef entityDef)
  	{
-@@ -2953,16 +2953,16 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -2953,16 +2954,16 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  				{
  					m_attackObject.SetActive(value: false);
  				}
@@ -32037,7 +32769,7 @@ index ad23fd2..1c3a2d2 100644
  		else
  		{
  			string text2 = ((!entityDef.HasTag(GAME_TAG.HIDE_ATTACK_NUMBER)) ? Convert.ToString(num) : string.Empty);
-@@ -3184,7 +3184,7 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -3184,7 +3185,7 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		else
  		{
  			UpdateMinionHealthText(m_entity.GetDefHealth(), m_entity.GetHealth(), m_entity.GetDamage(), allowJiggle: false, m_entity.HasTag(GAME_TAG.HIDE_HEALTH_NUMBER));
@@ -32046,7 +32778,7 @@ index ad23fd2..1c3a2d2 100644
  	}
  
  	public virtual void UpdateTextComponents(Entity entity)
-@@ -3517,23 +3517,13 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -3517,23 +3518,13 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		{
  			return;
  		}
@@ -32075,7 +32807,7 @@ index ad23fd2..1c3a2d2 100644
  	}
  
  	private bool ShouldUseEntityDefForPowersText()
-@@ -3656,11 +3646,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -3656,11 +3647,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		{
  			int dbId = m_entity.GetTag(GAME_TAG.PENDING_TRANSFORM_TO_CARD);
  			using DefLoader.DisposableFullDef disposableFullDef = DefLoader.Get().GetFullDef(dbId);
@@ -32091,7 +32823,16 @@ index ad23fd2..1c3a2d2 100644
  		if ((bool)UniversalInputManager.UsePhoneUI && m_entity != null)
  		{
  			TransformUtil.SetLocalPosZ(m_secretText, -0.01f);
-@@ -4496,19 +4486,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -4395,6 +4386,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+ 		{
+ 			TeammatePingWheelManager.Get().AddActorHasPing(this);
+ 		}
++
++		(AccessibleGameplay.Get() as AccessibleBattlegroundsGameplay).OnEntityPinged(this, pingType);
+ 	}
+ 
+ 	public void PingSelected(TEAMMATE_PING_TYPE pingType)
+@@ -4496,19 +4489,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			component.SendEvent("Birth");
  			return;
  		}
@@ -32123,7 +32864,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public virtual void UpdateCardRuneBannerComponent()
  	{
-@@ -4978,8 +4968,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -4978,8 +4971,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		else
  		{
  			if (m_tradeableBannerContainer != null)
@@ -32134,7 +32875,7 @@ index ad23fd2..1c3a2d2 100644
  			}
  			if (m_forgeBannerContainer != null)
  			{
-@@ -5204,9 +5194,9 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5204,9 +5197,9 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  				m_cardMesh.GetComponent<Renderer>().GetMaterial(m_cardFrontMatIdx).mainTexture = m_cardColorTex;
  			}
  			if ((cardType == TAG_CARDTYPE.SPELL || cardType == TAG_CARDTYPE.BATTLEGROUND_SPELL || (cardType == TAG_CARDTYPE.WEAPON && colorType == CardColorSwitcher.CardColorType.TYPE_DEATHKNIGHT)) && (bool)m_portraitMesh && m_portraitFrameMatIdx > -1)
@@ -32147,7 +32888,7 @@ index ad23fd2..1c3a2d2 100644
  		}
  		else if (m_legacyCardColorMaterialIndex >= 0 && m_meshRenderer != null)
  		{
-@@ -5325,18 +5315,18 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5325,18 +5318,18 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		{
  			if (reparent)
  			{
@@ -32173,7 +32914,7 @@ index ad23fd2..1c3a2d2 100644
  		}
  		m_entity = card.GetEntity();
  		UpdateTextComponents(m_entity);
-@@ -5479,11 +5469,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5479,11 +5472,11 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  		bool flag = false;
  		if (GetEntity() != null)
  		{
@@ -32190,7 +32931,7 @@ index ad23fd2..1c3a2d2 100644
  			flag = GetEntity().IsStealthed() || GetEntity().IsTauntIgnored();
  		}
  		switch (m_premiumType)
-@@ -5624,8 +5614,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5624,8 +5617,8 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  
  	public void DeactivateEvilTwinMustache()
  	{
@@ -32201,7 +32942,7 @@ index ad23fd2..1c3a2d2 100644
  		ActivateSpellDeathState(SpellType.EVIL_TWIN_MUSTACHE_SIGNATURE);
  		ActivateSpellDeathState(SpellType.EVIL_TWIN_MUSTACHE_DIAMOND);
  	}
-@@ -5721,19 +5711,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5721,19 +5714,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			}
  			return;
  		}
@@ -32231,7 +32972,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void DoCardDeathVisuals()
  	{
-@@ -5760,19 +5750,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -5760,19 +5753,19 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  			}
  			return;
  		}
@@ -32261,7 +33002,7 @@ index ad23fd2..1c3a2d2 100644
  
  	public void ReleaseSpell(SpellType spellType)
  	{
-@@ -6373,4 +6363,28 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
+@@ -6373,4 +6366,28 @@ public class Actor : MonoBehaviour, IVisibleWidgetComponent
  	{
  		return m_cardRuneBanner;
  	}
@@ -35360,7 +36101,7 @@ index 9160f90..7693e1f 100644
  		{
  			PartyManager.Get().UpdateBattlegroundsStrikeMemberAttribute();
 diff --git a/Assembly-CSharp/BaconDisplay.cs b/Assembly-CSharp/BaconDisplay.cs
-index f89ed44..4708f2c 100644
+index f89ed44..db2f24f 100644
 --- a/Assembly-CSharp/BaconDisplay.cs
 +++ b/Assembly-CSharp/BaconDisplay.cs
 @@ -74,7 +74,7 @@ public class BaconDisplay : AbsSceneDisplay
@@ -35400,7 +36141,17 @@ index f89ed44..4708f2c 100644
  			m_LobbyPhoneReference.RegisterReadyListener<Widget>(OnLobbyReady);
  			m_PartyPhoneReference.RegisterReadyListener<Widget>(OnPartyReady);
  		}
-@@ -369,7 +375,9 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -341,7 +347,8 @@ public class BaconDisplay : AbsSceneDisplay
+ 			return;
+ 		}
+ 		m_toggleWidget = widget;
+-		m_toggleWidget.gameObject.GetComponentInChildren<UIBButton>().AddEventListener(UIEventType.RELEASE, ToggleDuosRelease);
++        m_toggleButton = m_toggleWidget.gameObject.GetComponentInChildren<UIBButton>();
++        m_toggleButton.AddEventListener(UIEventType.RELEASE, ToggleDuosRelease);
+ 		UpdateDuosToggleButtonBasedOnPartyInfo();
+ 		if (!BaconLobbyMgr.Get().IsInDuosMode())
+ 		{
+@@ -369,7 +376,9 @@ public class BaconDisplay : AbsSceneDisplay
  			Error.AddDevWarning("UI Error!", "BackButton could not be found! You will not be able to click 'Back'!");
  			return;
  		}
@@ -35411,7 +36162,7 @@ index f89ed44..4708f2c 100644
  		m_backButtonFinishedLoading = true;
  	}
  
-@@ -506,7 +514,7 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -506,7 +515,7 @@ public class BaconDisplay : AbsSceneDisplay
  			return;
  		}
  		NotificationManager notificationManager = NotificationManager.Get();
@@ -35420,7 +36171,7 @@ index f89ed44..4708f2c 100644
  		m_luckyDrawFTUENotification.ShowPopUpArrow(Notification.PopUpArrowDirection.Up);
  	}
  
-@@ -655,26 +663,26 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -655,26 +664,26 @@ public class BaconDisplay : AbsSceneDisplay
  		}
  		NetCache.NetCacheFeatures netObject = NetCache.Get().GetNetObject<NetCache.NetCacheFeatures>();
  		bool flag = !netObject.Games.BattlegroundsTutorial;
@@ -35461,7 +36212,7 @@ index f89ed44..4708f2c 100644
  		else if (BaconLobbyMgr.Get().GetBattlegroundsGameMode() == "duos")
  		{
  			GameMgr.Get().FindGame(GameType.GT_BATTLEGROUNDS_DUO, FormatType.FT_WILD, 5173, 0, 0L, null, null, restoreSavedGameState: false, null, null, 0L);
-@@ -764,15 +772,15 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -764,15 +773,15 @@ public class BaconDisplay : AbsSceneDisplay
  	}
  
  	private void OnLobbyReady(Widget widget)
@@ -35482,7 +36233,7 @@ index f89ed44..4708f2c 100644
  		UpdateDuosToggleButtonBasedOnPartyInfo();
  	}
  
-@@ -878,12 +886,12 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -878,12 +887,12 @@ public class BaconDisplay : AbsSceneDisplay
  	{
  		if (Shop.Get() != null)
  		{
@@ -35498,7 +36249,7 @@ index f89ed44..4708f2c 100644
  	}
  
  	private void ShowLowMemoryAlertMessage()
-@@ -1071,7 +1079,7 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -1071,7 +1080,7 @@ public class BaconDisplay : AbsSceneDisplay
  				pastGame.TeammateHeroBuddy = cardDataModel6;
  				pastGame.TeammateHeroBuddyDatabaseID = (int)heroBuddyDatabaseIDList[num];
  				pastGame.TeammateHeroBuddyCost = (int)heroBuddyCostList[num];
@@ -35507,7 +36258,7 @@ index f89ed44..4708f2c 100644
  			else
  			{
  				pastGame.Hero = cardDataModel;
-@@ -1416,10 +1424,10 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -1416,10 +1425,10 @@ public class BaconDisplay : AbsSceneDisplay
  			return;
  		}
  		if (!service.HasProductsAvailable())
@@ -35521,7 +36272,7 @@ index f89ed44..4708f2c 100644
  		StoreManager.Get().StartGeneralTransaction("battlegrounds", OnStoreBackButtonPressed);
  		Shop shop = Shop.Get();
  		if (shop != null)
-@@ -1509,7 +1517,7 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -1509,7 +1518,7 @@ public class BaconDisplay : AbsSceneDisplay
  		}
  	}
  
@@ -35530,7 +36281,7 @@ index f89ed44..4708f2c 100644
  	{
  		CollectionManager.Get().NotifyOfBoxTransitionStart();
  		SceneMgr.Get().SetNextMode(SceneMgr.Mode.BACON_COLLECTION);
-@@ -1716,30 +1724,30 @@ public class BaconDisplay : AbsSceneDisplay
+@@ -1716,30 +1725,30 @@ public class BaconDisplay : AbsSceneDisplay
  				text = GameStrings.Get("GLUE_BACON_INCOMPLETE_TEAM");
  			}
  		}
@@ -35577,6 +36328,15 @@ index f89ed44..4708f2c 100644
  
  	private void OnStoreStatusChanged(bool isOpen)
  	{
+@@ -1821,4 +1830,8 @@ public class BaconDisplay : AbsSceneDisplay
+ 			m_slidingTray.m_trayShownBone = m_OnScreenBonePC;
+ 		}
+ 	}
++
++	#region Accessibility
++	internal UIBButton m_toggleButton;
++#endregion
+ }
 diff --git a/Assembly-CSharp/BaconFinisherCollectionDetails.cs b/Assembly-CSharp/BaconFinisherCollectionDetails.cs
 index 1836b03..fdc03c4 100644
 --- a/Assembly-CSharp/BaconFinisherCollectionDetails.cs
@@ -35976,7 +36736,7 @@ index fed39a3..96ace9b 100644
 +	}
 +
 diff --git a/Assembly-CSharp/BaconScene.cs b/Assembly-CSharp/BaconScene.cs
-index ccea649..456782a 100644
+index ccea649..8d7f421 100644
 --- a/Assembly-CSharp/BaconScene.cs
 +++ b/Assembly-CSharp/BaconScene.cs
 @@ -2,9 +2,10 @@ using System.Collections;
@@ -35991,7 +36751,16 @@ index ccea649..456782a 100644
  {
  	private bool m_ratingInfoReceived;
  
-@@ -57,6 +58,176 @@ public class BaconScene : BasicScene
+@@ -19,6 +20,8 @@ public class BaconScene : BasicScene
+ 			GameSaveKeyId.BACON,
+ 			GameSaveKeyId.BACON_DUOS
+ 		}, OnGameSaveDataReceived);
++
++		BaconLobbyMgr.Get().AddBattlegroundsGameModeChangedListener(OnBattlegroundsGameModeChanged);
+ 		base.Start();
+ 	}
+ 
+@@ -57,6 +60,195 @@ public class BaconScene : BasicScene
  		{
  			yield return null;
  		}
@@ -36000,6 +36769,11 @@ index ccea649..456782a 100644
 +
 +		ReadScreen();
 +  }
++
++	private void OnDestroy()
++	{
++		BaconLobbyMgr.Get().RemoveBattlegroundsGameModeChangedListener(OnBattlegroundsGameModeChanged);
++	}
 +
 +	#region Accessibility
 +
@@ -36022,6 +36796,10 @@ index ccea649..456782a 100644
 +		if (PartyManager.Get().IsInBattlegroundsParty())
 +		{
 +			m_curMenu.AddOption(LocalizationUtils.Get(LocalizationKey.SCREEN_BATTLEGROUNDS_SEE_PARTY), () => BaconParty.Get().ReadParty());
++		}
++		if (!PartyManager.Get().IsInBattlegroundsParty() || PartyManager.Get().IsPartyLeader())
++		{
++			m_curMenu.AddOption(LocalizationUtils.Get(BaconLobbyMgr.Get().IsInDuosMode() ? LocalizationKey.SCREEN_BATTLEGROUNDS_SWITCH_TO_SOLO : LocalizationKey.SCREEN_BATTLEGROUNDS_SWITCH_TO_DUOS), OnClickSwitchMode);
 +		}
 +		m_curMenu.AddOption(LocalizationUtils.Get(LocalizationKey.SCREEN_BATTLEGROUNDS_READ_STATS), OnReadStats);
 +		m_curMenu.AddOption(GameStrings.Get("GLOBAL_OPTIONS"), OnClickOptions);
@@ -36097,6 +36875,16 @@ index ccea649..456782a 100644
 +			return;
 +		}
 +		btn.TriggerRelease();
++	}
++
++	private void OnClickSwitchMode()
++	{
++		GetBaconDisplay().m_toggleButton.TriggerRelease();
++	}
++
++	private void OnBattlegroundsGameModeChanged(string gameMode, bool showPartyUI, object userData)
++	{
++		ReadScreen();
 +	}
 +
 +	private void OnGoBackToHub()
@@ -38711,7 +39499,7 @@ index 6048edb..9c50500 100644
  	private List<GameObject> m_horizontalDividers = new List<GameObject>();
  
 diff --git a/Assembly-CSharp/Card.cs b/Assembly-CSharp/Card.cs
-index 5e76ce4..cedffff 100644
+index 5e76ce4..7964049 100644
 --- a/Assembly-CSharp/Card.cs
 +++ b/Assembly-CSharp/Card.cs
 @@ -11,6 +11,7 @@ using Hearthstone.Progression;
@@ -39450,6 +40238,30 @@ index 5e76ce4..cedffff 100644
  		if (collider == null)
  		{
  			return false;
+@@ -8573,4 +8578,23 @@ public class Card : MonoBehaviour
+ 		}
+ 		return m_cardDef.CardDef.GetComponent<T>();
+ 	}
++
++	#region Accessibility
++	private VirtualZone m_virtualZone;
++
++	internal IZone GetAccessibleZone()
++	{
++		return m_virtualZone != null ? m_virtualZone : GetZone();
++	}
++
++	internal void SetVirtualZone(VirtualZone zone)
++	{
++		m_virtualZone = zone;
++	}
++
++	internal void ClearVirtualZone()
++	{
++		m_virtualZone = null;
++	}
++	#endregion
+ }
 diff --git a/Assembly-CSharp/CardBackInfoManager.cs b/Assembly-CSharp/CardBackInfoManager.cs
 index a03fe27..908031c 100644
 --- a/Assembly-CSharp/CardBackInfoManager.cs
@@ -96254,6 +97066,307 @@ index 78d5a0b..471fadf 100644
  		}
  	}
  
+diff --git a/Assembly-CSharp/TeammateBoardViewer.cs b/Assembly-CSharp/TeammateBoardViewer.cs
+index 026a32b..7994402 100644
+--- a/Assembly-CSharp/TeammateBoardViewer.cs
++++ b/Assembly-CSharp/TeammateBoardViewer.cs
+@@ -623,4 +623,24 @@ public class TeammateBoardViewer : MonoBehaviour
+ 	{
+ 		return m_teammatePlayerTags;
+ 	}
++
++	#region Accessibility
++	internal DuosPortal GetDuosPortal()
++	{
++		return m_duosPortal;
++	}
++
++	internal T GetViewer<T>() where T: TeammateViewer
++	{
++		foreach (var viewer in m_teammateViewers)
++		{
++			var v = viewer as T;
++			if (v != null)
++			{
++				return v;
++			}
++		}
++		return null;
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateGameModeButtonViewer.cs b/Assembly-CSharp/TeammateGameModeButtonViewer.cs
+index 32283b7..fe7b6d2 100644
+--- a/Assembly-CSharp/TeammateGameModeButtonViewer.cs
++++ b/Assembly-CSharp/TeammateGameModeButtonViewer.cs
+@@ -419,4 +419,31 @@ public class TeammateGameModeButtonViewer : TeammateViewer
+ 			yield return null;
+ 		}
+ 	}
++
++	#region Accessibility
++	internal int GetTeammateGold()
++	{
++		return m_teammateGold;
++	}
++
++	internal int GetTeammateMaxGold()
++	{
++		return m_teammateMaxGold;
++	}
++
++	internal Card GetFreezeButtonCard()
++	{
++		return m_freezeButtonDummyActor?.GetCard();
++	}
++
++		internal Card GetRefreshButtonCard()
++	{
++		return m_refreshButtonDummyActor?.GetCard();
++	}
++
++	internal Card GetTavernUpgradeButtonCard()
++	{
++		return m_tavernButtonDummyActor?.GetCard();
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateHandViewer.cs b/Assembly-CSharp/TeammateHandViewer.cs
+index 24414f2..e9b7f40 100644
+--- a/Assembly-CSharp/TeammateHandViewer.cs
++++ b/Assembly-CSharp/TeammateHandViewer.cs
+@@ -4,6 +4,7 @@ using System.Collections.Generic;
+ using System.Linq;
+ using PegasusGame;
+ using UnityEngine;
++using Accessibility;
+ 
+ public class TeammateHandViewer : TeammateViewer
+ {
+@@ -41,6 +42,8 @@ public class TeammateHandViewer : TeammateViewer
+ 		m_enlargedCenter = m_handZone.gameObject.transform.position - m_handZone.gameObject.transform.localPosition + m_handZone.m_enlargedHandPosition + m_teammateBoardPosition;
+ 		m_mousedOverHeight = m_handZone.transform.Find("MouseOverCardHeight").position.z;
+ 		m_zoneTeammateHand = ZoneMgr.Get().FindZonesOfType<ZoneTeammateHand>(Player.Side.FRIENDLY).FirstOrDefault();
++
++		m_virtualZone = new VirtualZone();
+ 	}
+ 
+ 	public override bool ShouldEntityBeInViewer(TeammateEntityData entityData)
+@@ -190,6 +193,8 @@ public class TeammateHandViewer : TeammateViewer
+ 			}
+ 			card.CancelCustomSpells();
+ 			RemoveStandIn(actor.GetCard());
++
++			m_virtualZone.RemoveCard(card);
+ 		}
+ 	}
+ 
+@@ -261,6 +266,9 @@ public class TeammateHandViewer : TeammateViewer
+ 		Vector3 cardPositionInHand = GetCardPositionInHand(handZone, GetZoneCenter(), index, m_friendlyCardsInHand, cardRotation.y);
+ 		Card card = actor.GetCard();
+ 		UpdateStandIn(card, cardPositionInHand, cardScale, cardRotation);
++
++		m_virtualZone.UpdateCardPosition(card, index);
++
+ 		if (!num)
+ 		{
+ 			iTween.Stop(card.gameObject, includechildren: true);
+@@ -460,4 +468,13 @@ public class TeammateHandViewer : TeammateViewer
+ 		}
+ 		return flag;
+ 	}
++
++	#region Accessibility
++	private VirtualZone m_virtualZone;
++
++	internal VirtualZone GetVirtualZone()
++	{
++		return m_virtualZone;
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateHeroSelectViewer.cs b/Assembly-CSharp/TeammateHeroSelectViewer.cs
+index 80b8380..91a441e 100644
+--- a/Assembly-CSharp/TeammateHeroSelectViewer.cs
++++ b/Assembly-CSharp/TeammateHeroSelectViewer.cs
+@@ -1,6 +1,7 @@
+ using System.Collections;
+ using System.Collections.Generic;
+ using System.Linq;
++using Accessibility;
+ using PegasusGame;
+ using UnityEngine;
+ 
+@@ -226,6 +227,8 @@ public class TeammateHeroSelectViewer : TeammateViewer
+ 			CalculateHeroPositions(zoneHand, num);
+ 		}
+ 		UpdateMulliganEntities();
++
++		(AccessibleGameplay.Get() as AccessibleBattlegroundsGameplay).OnTeammateMulliganEntitiesReceived(m_mulliganHeroes);
+ 	}
+ 
+ 	public void ChooseEntitySelected(TeammatesEntitiesChosen entityChosen)
+@@ -245,6 +248,8 @@ public class TeammateHeroSelectViewer : TeammateViewer
+ 		m_mulliganHeroes.Clear();
+ 		m_lockedLeftActors.Clear();
+ 		m_lockedRightActors.Clear();
++
++		(AccessibleGameplay.Get() as AccessibleBattlegroundsGameplay).OnTeammateChoseHero(m_chosenMulliganHero);
+ 	}
+ 
+ 	public void DeleteEntities(bool includeChosen)
+diff --git a/Assembly-CSharp/TeammateHeroViewer.cs b/Assembly-CSharp/TeammateHeroViewer.cs
+index 0795079..a896740 100644
+--- a/Assembly-CSharp/TeammateHeroViewer.cs
++++ b/Assembly-CSharp/TeammateHeroViewer.cs
+@@ -111,6 +111,11 @@ public class TeammateHeroViewer : TeammateViewer
+ 
+ 	protected override void SetViewerSpecificData(Actor actor)
+ 	{
++		if (actor.GetEntity().IsHeroPower())
++		{
++			m_teammateHeroPower = actor.GetEntity();
++		}
++
+ 		if (actor.GetEntity().IsHeroPower() && m_teammateHeroPowerDisabled)
+ 		{
+ 			actor.GetEntity().SetTag(GAME_TAG.EXHAUSTED, tagValue: true);
+@@ -132,4 +137,13 @@ public class TeammateHeroViewer : TeammateViewer
+ 	{
+ 		return m_teammateHero;
+ 	}
++
++	#region Accessibility
++	private Entity m_teammateHeroPower;
++
++	public Entity GetTeammateHeroPower()
++	{
++		return m_teammateHeroPower;
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateMinionViewer.cs b/Assembly-CSharp/TeammateMinionViewer.cs
+index 1d718dd..e7f1a1b 100644
+--- a/Assembly-CSharp/TeammateMinionViewer.cs
++++ b/Assembly-CSharp/TeammateMinionViewer.cs
+@@ -3,6 +3,7 @@ using System.Collections.Generic;
+ using System.Linq;
+ using PegasusGame;
+ using UnityEngine;
++using Accessibility;
+ 
+ public class TeammateMinionViewer : TeammateViewer
+ {
+@@ -38,6 +39,9 @@ public class TeammateMinionViewer : TeammateViewer
+ 		m_friendlyZoneCenter = m_friendlyPlayZone.GetComponent<Collider>().bounds.center + m_teammateBoardPosition;
+ 		m_opposingPlayZone = ZoneMgr.Get().FindZonesOfType<ZonePlay>(Player.Side.OPPOSING).FirstOrDefault();
+ 		m_opposingZoneCenter = m_opposingPlayZone.GetComponent<Collider>().bounds.center + m_teammateBoardPosition;
++
++		m_friendlyVirtualZone = new VirtualZone();
++		m_opposingVirtualZone = new VirtualZone();
+ 	}
+ 
+ 	public override bool ShouldEntityBeInViewer(TeammateEntityData entityData)
+@@ -88,6 +92,8 @@ public class TeammateMinionViewer : TeammateViewer
+ 			if (!(card == null))
+ 			{
+ 				card.CancelCustomSpells();
++
++				(IsFriendly(card.GetEntity()) ? m_friendlyVirtualZone : m_opposingVirtualZone).RemoveCard(card);
+ 			}
+ 		}
+ 	}
+@@ -135,9 +141,10 @@ public class TeammateMinionViewer : TeammateViewer
+ 		int index = 0;
+ 		Entity entity = actor.GetEntity();
+ 		Vector3 vector = new Vector3(0f, 0f, 0f);
+-		bool flag = entity.GetTag(GAME_TAG.CONTROLLER) == GameState.Get().GetFriendlyPlayerId();
++		bool isFriendly = IsFriendly(entity);
+ 		bool num = TeammateBoardViewer.Get().IsViewingTeammate();
+-		ZonePlay zonePlay = (flag ? m_friendlyPlayZone : m_opposingPlayZone);
++		ZonePlay zonePlay = (isFriendly ? m_friendlyPlayZone : m_opposingPlayZone);
++		VirtualZone virtualZone = isFriendly ? m_friendlyVirtualZone : m_opposingVirtualZone;
+ 		Vector3 localScale = zonePlay.transform.localScale;
+ 		if ((bool)UniversalInputManager.UsePhoneUI)
+ 		{
+@@ -145,10 +152,12 @@ public class TeammateMinionViewer : TeammateViewer
+ 		}
+ 		if (entity.HasTag(GAME_TAG.ZONE_POSITION))
+ 		{
+-			index = entity.GetTag(GAME_TAG.ZONE_POSITION) - (flag ? 1 : m_opposingMinionsZonePosOffset);
++			index = entity.GetTag(GAME_TAG.ZONE_POSITION) - (isFriendly ? 1 : m_opposingMinionsZonePosOffset);
+ 		}
+-		vector = ((!flag) ? GetCardPositionInPlay(zonePlay, m_opposingZoneCenter, index, m_opposingMinionsInPlay) : GetCardPositionInPlay(zonePlay, m_friendlyZoneCenter, index, m_friendlyMinionsInPlay));
++		vector = ((!isFriendly) ? GetCardPositionInPlay(zonePlay, m_opposingZoneCenter, index, m_opposingMinionsInPlay) : GetCardPositionInPlay(zonePlay, m_friendlyZoneCenter, index, m_friendlyMinionsInPlay));
+ 		Card card = actor.GetCard();
++		virtualZone.UpdateCardPosition(card, index);
++
+ 		if (!num)
+ 		{
+ 			iTween.Stop(card.gameObject, includechildren: true);
+@@ -250,4 +259,25 @@ public class TeammateMinionViewer : TeammateViewer
+ 		card.OverrideCustomSpawnSpell(SpellManager.Get().GetSpell(m_refreshSpawnSpell));
+ 		card.ActivateMinionSpawnEffects();
+ 	}
++
++	#region Accessibility
++	private VirtualZone m_friendlyVirtualZone;
++
++	private VirtualZone m_opposingVirtualZone;
++
++	internal VirtualZone GetFriendlyVirtualZone()
++	{
++		return m_friendlyVirtualZone;
++	}
++
++	internal VirtualZone GetOpposingVirtualZone()
++	{
++		return m_opposingVirtualZone;
++	}
++
++	private static bool IsFriendly(Entity entity)
++	{
++		return entity.GetTag(GAME_TAG.CONTROLLER) == GameState.Get().GetFriendlyPlayerId();
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammatePingWheelManager.cs b/Assembly-CSharp/TeammatePingWheelManager.cs
+index f2c5fb2..c02254b 100644
+--- a/Assembly-CSharp/TeammatePingWheelManager.cs
++++ b/Assembly-CSharp/TeammatePingWheelManager.cs
+@@ -123,4 +123,19 @@ public class TeammatePingWheelManager : MonoBehaviour
+ 	{
+ 		return m_viewingActor;
+ 	}
++
++	#region Accessibility
++	internal Card GetLastPingedCard()
++	{
++		for (int i = m_actorsWithPing.Count - 1; i >= 0; i--)
++		{
++			if (m_actorsWithPing[i] == null)
++			{
++				continue;
++			}
++			return m_actorsWithPing[i].GetCard();
++		}
++		return null;
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateSecretViewer.cs b/Assembly-CSharp/TeammateSecretViewer.cs
+index 6cb1f28..ce1b00a 100644
+--- a/Assembly-CSharp/TeammateSecretViewer.cs
++++ b/Assembly-CSharp/TeammateSecretViewer.cs
+@@ -5,7 +5,7 @@ using UnityEngine;
+ 
+ public class TeammateSecretViewer : TeammateViewer
+ {
+-	private ZoneSecret teammateSecretZone;
++	internal ZoneSecret teammateSecretZone;
+ 
+ 	public override void InitZones(Vector3 teammateBoardPos)
+ 	{
 diff --git a/Assembly-CSharp/TextUtils.cs b/Assembly-CSharp/TextUtils.cs
 index b52640a..5097316 100644
 --- a/Assembly-CSharp/TextUtils.cs
@@ -99274,3 +100387,18 @@ index 318ac0a..3576fe6 100644
  	}
  
  	public void LoadNewActorAndConstructIt()
+diff --git a/Assembly-CSharp/Zone.cs b/Assembly-CSharp/Zone.cs
+index 847e0e5..5243be5 100644
+--- a/Assembly-CSharp/Zone.cs
++++ b/Assembly-CSharp/Zone.cs
+@@ -1,8 +1,9 @@
+ using System.Collections;
+ using System.Collections.Generic;
+ using UnityEngine;
++using Accessibility;
+ 
+-public class Zone : MonoBehaviour
++public class Zone : MonoBehaviour, IZone
+ {
+ 	public delegate void UpdateLayoutCompleteCallback(Zone zone, object userData);
+ 
