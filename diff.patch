@@ -1,6 +1,3 @@
-diff --git a/.product.db b/.product.db
-index d451731..be2e02a 100644
-Binary files a/.product.db and b/.product.db differ
 diff --git a/Assembly-CSharp/.gitignore b/Assembly-CSharp/.gitignore
 new file mode 100644
 index 0000000..17c1c11
@@ -37799,19 +37796,6 @@ index 2a35f30..031522d 100644
  
  		public bool HappenedBefore { get; set; }
  
-diff --git a/Assembly-CSharp/Blizzard/T5/Jobs/JobQueueTelemetry.cs b/Assembly-CSharp/Blizzard/T5/Jobs/JobQueueTelemetry.cs
-index df3afab..5ac4634 100644
---- a/Assembly-CSharp/Blizzard/T5/Jobs/JobQueueTelemetry.cs
-+++ b/Assembly-CSharp/Blizzard/T5/Jobs/JobQueueTelemetry.cs
-@@ -24,7 +24,7 @@ namespace Blizzard.T5.Jobs
- 		private bool OnJobError(JobDefinition job, string reason)
- 		{
- 			float duration = CalculateJobDuration(job, Time.realtimeSinceStartup);
--			TelemetryManager.Client().SendJobFinishFailure(job.Name, reason, m_testType, 3806666.ToString(), duration);
-+			TelemetryManager.Client().SendJobFinishFailure(job.Name, reason, m_testType, 3810547.ToString(), duration);
- 			m_jobDurations.Remove(job);
- 			return false;
- 		}
 diff --git a/Assembly-CSharp/BnetBar.cs b/Assembly-CSharp/BnetBar.cs
 index 7b6b985..f88c9af 100644
 --- a/Assembly-CSharp/BnetBar.cs
@@ -69316,7 +69300,7 @@ index 8110622..1e11b2d 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/GameState.cs b/Assembly-CSharp/GameState.cs
-index bfc4649..a92b284 100644
+index 097f5ee..a92b284 100644
 --- a/Assembly-CSharp/GameState.cs
 +++ b/Assembly-CSharp/GameState.cs
 @@ -11,6 +11,7 @@ using Blizzard.T5.Core;
@@ -69483,15 +69467,6 @@ index bfc4649..a92b284 100644
  			if (!(card == null))
  			{
  				if (heldEntity.HasTag(GAME_TAG.BACON_COSTS_HEALTH_TO_BUY))
-@@ -4081,7 +4099,7 @@ public class GameState
- 		if (powerList.Count == 1)
- 		{
- 			string text = "Game Created without entries:";
--			text += $" BuildNumber={201108}";
-+			text += $" BuildNumber={201392}";
- 			text += $" GameType={GameMgr.Get().GetGameType()}";
- 			text += $" FormatType={GameMgr.Get().GetFormatType()}";
- 			text += $" ScenarioID={GameMgr.Get().GetMissionId()}";
 @@ -4321,7 +4339,7 @@ public class GameState
  		Entity entity = GetEntity(netChange.Entity);
  		if (entity == null)
@@ -69674,15 +69649,6 @@ index bfc4649..a92b284 100644
  		}
  		OnSelectedOptionsSent();
  		Network.Options.Option option = m_lastOptions.List[m_lastSelectedOption.m_main];
-@@ -5173,7 +5192,7 @@ public class GameState
- 		{
- 			return;
- 		}
--		Log.Power.Print($"GameState.DebugPrintGame() - BuildNumber={201108}");
-+		Log.Power.Print($"GameState.DebugPrintGame() - BuildNumber={201392}");
- 		Log.Power.Print($"GameState.DebugPrintGame() - GameType={GameMgr.Get().GetGameType()}");
- 		Log.Power.Print($"GameState.DebugPrintGame() - FormatType={GameMgr.Get().GetFormatType()}");
- 		Log.Power.Print($"GameState.DebugPrintGame() - ScenarioID={GameMgr.Get().GetMissionId()}");
 diff --git a/Assembly-CSharp/GameStrings.cs b/Assembly-CSharp/GameStrings.cs
 index 88d88db..c8f60d2 100644
 --- a/Assembly-CSharp/GameStrings.cs
@@ -77020,7 +76986,7 @@ index a168aca..f865d23 100644
  	}
  }
 diff --git a/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs b/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
-index efc0a42..3ff8cf0 100644
+index 79016fc..3ff8cf0 100644
 --- a/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
 +++ b/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
 @@ -161,9 +161,9 @@ namespace Hearthstone.Core.Streaming
@@ -77036,19 +77002,6 @@ index efc0a42..3ff8cf0 100644
  
  		private static readonly string[] s_dbfTags = new string[2]
  		{
-@@ -659,10 +659,10 @@ namespace Hearthstone.Core.Streaming
- 				{
- 					string[] array = Application.version.Split('.');
- 					m_installedVersionCode = int.Parse(array[2]);
--					if (m_installedVersionCode != 201108)
-+					if (m_installedVersionCode != 201392)
- 					{
- 						Log.Downloader.PrintError("Application.version is different from our setting");
--						m_installedVersionCode = 201108;
-+						m_installedVersionCode = 201392;
- 					}
- 				}
- 				catch (Exception ex)
 @@ -1082,11 +1082,11 @@ namespace Hearthstone.Core.Streaming
  				try
  				{
@@ -77130,19 +77083,6 @@ index efc0a42..3ff8cf0 100644
  
  		private string GetNGDPRegion()
  		{
-@@ -3239,10 +3239,10 @@ namespace Hearthstone.Core.Streaming
- 
- 		private bool IsDisabledAPKUpdateVersion()
- 		{
--			bool flag = m_disabledAPKUpdates != null && Array.Exists(m_disabledAPKUpdates, (int s) => s == 201108);
-+			bool flag = m_disabledAPKUpdates != null && Array.Exists(m_disabledAPKUpdates, (int s) => s == 201392);
- 			if (flag)
- 			{
--				Log.Downloader.PrintInfo("The current version-{0} is disabled for APK update.", 201108);
-+				Log.Downloader.PrintInfo("The current version-{0} is disabled for APK update.", 201392);
- 			}
- 			return flag;
- 		}
 diff --git a/Assembly-CSharp/Hearthstone/Core/Streaming/TagIndicatorManager.cs b/Assembly-CSharp/Hearthstone/Core/Streaming/TagIndicatorManager.cs
 index 4770da7..5843889 100644
 --- a/Assembly-CSharp/Hearthstone/Core/Streaming/TagIndicatorManager.cs
@@ -77211,7 +77151,7 @@ index be2b52c..1e2f333 100644
  		}
  
 diff --git a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
-index eb28afe..1ef5d7b 100644
+index 5983e01..1ef5d7b 100644
 --- a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 +++ b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 @@ -1,5 +1,6 @@
@@ -77221,15 +77161,6 @@ index eb28afe..1ef5d7b 100644
  using System.IO;
  using System.Text;
  using Blizzard.BlizzardErrorMobile;
-@@ -77,7 +78,7 @@ namespace Hearthstone
- 			exceptionSettings.m_moduleName = "Hearthstone Client";
- 			exceptionSettings.m_version = "29.6";
- 			exceptionSettings.m_branchName = Network.BranchName;
--			exceptionSettings.m_buildNumber = 201108;
-+			exceptionSettings.m_buildNumber = 201392;
- 			exceptionSettings.m_locale = Localization.GetLocaleName();
- 			exceptionSettings.m_jiraProjectName = "HSTN";
- 			exceptionSettings.m_jiraComponent = "T5 Needs Triage";
 @@ -107,6 +108,37 @@ namespace Hearthstone
  			HearthstoneApplication.Get().Resetting += ExceptionReporter.Get().ClearExceptionHashes;
  		}
@@ -77278,7 +77209,7 @@ index eb28afe..1ef5d7b 100644
  			catch (Exception ex)
  			{
 diff --git a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
-index d026ae9..53b0b89 100644
+index 78d1ba9..53b0b89 100644
 --- a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 +++ b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 @@ -5,6 +5,7 @@ using System.IO;
@@ -77328,7 +77259,7 @@ index d026ae9..53b0b89 100644
  			GameStrings.LoadNative();
  			if (IsPublic())
  			{
-@@ -225,9 +229,10 @@ namespace Hearthstone
+@@ -225,7 +229,8 @@ namespace Hearthstone
  			BlizzardAttributionManager.Get().Initialize();
  			TelemetryManager.Initialize();
  			TracertReporter.SendTelemetry();
@@ -77336,32 +77267,17 @@ index d026ae9..53b0b89 100644
 +			// ExceptionReporterControl.Get().ExceptionReportInitialize(); // Remove so we don't send Blizzard exceptions that may be caused by us
 +			ExceptionReporterControl.Get().ExceptionReportInitializeDebug();
  			TelemetryManager.Client().SendSystemDetail(TelemetryUtil.GetUnitySystemInfo());
--			HearthstonePerformance.Initialize(TestType, 3806666.ToString(), 201108);
-+			HearthstonePerformance.Initialize(TestType, 3810547.ToString(), 201392);
+ 			HearthstonePerformance.Initialize(TestType, 3810547.ToString(), 201392);
  			HearthstonePerformance.Get()?.CaptureAppStartTime();
- 			AppLaunchTracker.TrackAppLaunch();
- 			yield return null;
-@@ -279,8 +284,10 @@ namespace Hearthstone
+@@ -279,6 +284,8 @@ namespace Hearthstone
  
  		private void OnApplicationQuit()
  		{
 +			AccessibleHearthstoneApplication.OnClosing();
 +			AccessibilityMgr.Shutdown();
  			IsHearthstoneClosing = true;
--			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 201108, Log.UberText);
-+			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 201392, Log.UberText);
+ 			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 201392, Log.UberText);
  			if (this.OnShutdown != null)
- 			{
- 				this.OnShutdown();
-@@ -320,7 +327,7 @@ namespace Hearthstone
- 					this.Paused();
- 				}
- 				PreviousInstanceStatus.ClosedWithoutCrash = true;
--				UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 201108, Log.UberText);
-+				UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 201392, Log.UberText);
- 				Network.ApplicationPaused();
- 				TelemetryManager.Client().SendAppPaused(pauseStatus: true, 0f);
- 				TelemetryManager.NetworkComponent.FlushSamplers();
 @@ -525,7 +532,7 @@ namespace Hearthstone
  
  		private ServiceLocator RegisterRuntimeServices()
@@ -77391,7 +77307,7 @@ index d026ae9..53b0b89 100644
  			runtimeServices.RegisterService<IGameStringsService>(new GameStringsService());
  			runtimeServices.RegisterService<LuckyDrawManager>();
  			runtimeServices.RegisterService<CameraManager>();
-@@ -664,9 +671,10 @@ namespace Hearthstone
+@@ -664,7 +671,8 @@ namespace Hearthstone
  			WaitForGameDownloadManagerAvailable waitForGameDownloadManagerAvailable = new WaitForGameDownloadManagerAvailable();
  			WaitForGameDownloadManagerState waitForGameDownloadManagerState = new WaitForGameDownloadManagerState();
  			JobDefinition jobDefinition = new JobDefinition("GameStrings.LoadAll", GameStrings.Job_LoadAll(), waitForGameDownloadManagerState);
@@ -77399,11 +77315,8 @@ index d026ae9..53b0b89 100644
 +			jobDefinition.AddJobFinishedEventListener(OnGameStringsLoaded);
 +			Processor.QueueJob("HearthstoneApplication.InitializeMode", Job_InitializeMode(), Array.Empty<IJobDependency>());
  			Processor.QueueJob(jobDefinition);
--			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 201108, Log.UberText));
-+			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 201392, Log.UberText));
+ 			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 201392, Log.UberText));
  			Processor.QueueJob(HearthstoneJobs.CreateJobFromAction("HearthstoneApplication.SetWindowText", SetWindowText, jobDefinition.CreateDependency()));
- 			Processor.QueueJob(HearthstoneJobs.CreateJobFromDependency("Load_LogoAnimation", new LoadUIScreen("LogoAnimation.prefab:d2af09653759c2449b0426037b7fe9eb"), waitForGameDownloadManagerAvailable, typeof(GameDownloadManager), typeof(SceneMgr), typeof(IAssetLoader), typeof(Benchmarker)));
- 			Processor.QueueJob(HearthstoneJobs.CreateJobFromDependency("Load_OverlayUI", new LoadUIScreen("OverlayUI.prefab:af7221edeeba8412cb55e9d6b58bb8dc"), waitForGameDownloadManagerAvailable, typeof(GameDownloadManager), typeof(SceneMgr), typeof(IAssetLoader)));
 @@ -712,7 +720,12 @@ namespace Hearthstone
  			}
  		}
@@ -77439,15 +77352,6 @@ index d026ae9..53b0b89 100644
  		}
  
  		public IEnumerator<IAsyncJobResult> Job_OnResetDownloadComplete()
-@@ -810,7 +824,7 @@ namespace Hearthstone
- 			{
- 				GameStrings.LoadNative();
- 			}
--			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 201108, Log.UberText));
-+			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 201392, Log.UberText));
- 			if (ServiceManager.TryGet<IFontTable>(out var _))
- 			{
- 				ServiceManager.Get<IFontTable>().StartFontLoadingJob();
 @@ -932,7 +946,7 @@ namespace Hearthstone
  				}
  				else if (!string.IsNullOrEmpty(str))
@@ -80240,19 +80144,6 @@ index 2dcb145..5b2888f 100644
  		}
  
  		protected void SetPlayerPausedDownload()
-diff --git a/Assembly-CSharp/Hearthstone/Telemetry/BaseContextData.cs b/Assembly-CSharp/Hearthstone/Telemetry/BaseContextData.cs
-index d0f0965..e6b890d 100644
---- a/Assembly-CSharp/Hearthstone/Telemetry/BaseContextData.cs
-+++ b/Assembly-CSharp/Hearthstone/Telemetry/BaseContextData.cs
-@@ -95,7 +95,7 @@ namespace Hearthstone.Telemetry
- 		public BaseContextData()
- 		{
- 			m_connectionType = ((!GetTelemetryHost.Equals(ProductionUrl, StringComparison.InvariantCultureIgnoreCase)) ? TelemetryConnectionType.Internal : TelemetryConnectionType.Production);
--			m_programVersion = $"{29}.{6}.{0}.{201108}";
-+			m_programVersion = $"{29}.{6}.{0}.{201392}";
- 			m_battleNetId = BnetUtils.TryGetBnetAccountId();
- 			m_battleNetRegion = (int?)BnetUtils.TryGetGameRegion();
- 			m_telemetryDisabled = Vars.Key("Telemetry.Enabled").GetBool(def: true);
 diff --git a/Assembly-CSharp/Hearthstone/Timeline/TimelineEffectBehaviour.cs b/Assembly-CSharp/Hearthstone/Timeline/TimelineEffectBehaviour.cs
 index f0eb980..3152384 100644
 --- a/Assembly-CSharp/Hearthstone/Timeline/TimelineEffectBehaviour.cs
@@ -80510,7 +80401,7 @@ index 5c832d4..63ab9eb 100644
  		private WidgetTemplate m_parentWidgetTemplate;
  
 diff --git a/Assembly-CSharp/HearthstoneCheckout.cs b/Assembly-CSharp/HearthstoneCheckout.cs
-index 5704546..9037c90 100644
+index 274787e..9037c90 100644
 --- a/Assembly-CSharp/HearthstoneCheckout.cs
 +++ b/Assembly-CSharp/HearthstoneCheckout.cs
 @@ -191,9 +191,6 @@ public class HearthstoneCheckout : blz_commerce_log_hook, ISceneEventObserver, I
@@ -80582,15 +80473,6 @@ index 5704546..9037c90 100644
  		}
  		transactionData.ErrorCodes = errorCode;
  		return transactionData;
-@@ -1025,7 +1015,7 @@ public class HearthstoneCheckout : blz_commerce_log_hook, ISceneEventObserver, I
- 	{
- 		string text = "29.6";
- 		string text2 = "0";
--		int num = 201108;
-+		int num = 201392;
- 		string platformString = GetPlatformString();
- 		return $"{text}.{text2}.{num}-{platformString}";
- 	}
 @@ -1153,8 +1143,8 @@ public class HearthstoneCheckout : blz_commerce_log_hook, ISceneEventObserver, I
  		m_closeRequested = false;
  		m_currentTransaction = null;
@@ -85436,7 +85318,7 @@ index 3de5e16..46d0405 100644
  	}
  
 diff --git a/Assembly-CSharp/Network.cs b/Assembly-CSharp/Network.cs
-index 6e95b49..e6bcdf5 100644
+index 5091c7f..e6bcdf5 100644
 --- a/Assembly-CSharp/Network.cs
 +++ b/Assembly-CSharp/Network.cs
 @@ -36,6 +36,7 @@ using PegasusUtil;
@@ -85447,33 +85329,6 @@ index 6e95b49..e6bcdf5 100644
  
  public class Network : IHasUpdate, IService
  {
-@@ -51,7 +52,7 @@ public class Network : IHasUpdate, IService
- 		public string GetUserAgent()
- 		{
- 			string text = "Hearthstone/";
--			text = text + "29.6." + 201108 + " (";
-+			text = text + "29.6." + 201392 + " (";
- 			text = ((PlatformSettings.OS == OSCategory.iOS) ? (text + "iOS;") : ((PlatformSettings.OS == OSCategory.Android) ? (text + "Android;") : ((PlatformSettings.OS == OSCategory.PC) ? (text + "PC;") : ((PlatformSettings.OS != OSCategory.Mac) ? (text + "UNKNOWN;") : (text + "Mac;")))));
- 			text = text + CleanUserAgentString(SystemInfo.deviceModel) + ";" + SystemInfo.deviceType.ToString() + ";" + CleanUserAgentString(SystemInfo.deviceUniqueIdentifier) + ";" + SystemInfo.graphicsDeviceID + ";" + CleanUserAgentString(SystemInfo.graphicsDeviceName) + ";" + CleanUserAgentString(SystemInfo.graphicsDeviceVendor) + ";" + SystemInfo.graphicsDeviceVendorID + ";" + CleanUserAgentString(SystemInfo.graphicsDeviceVersion) + ";" + SystemInfo.graphicsMemorySize + ";" + SystemInfo.graphicsShaderLevel + ";" + SystemInfo.npotSupport.ToString() + ";" + CleanUserAgentString(SystemInfo.operatingSystem) + ";" + SystemInfo.processorCount + ";" + CleanUserAgentString(SystemInfo.processorType) + ";" + SystemInfo.supportedRenderTargetCount + ";" + SystemInfo.supports3DTextures + ";" + SystemInfo.supportsAccelerometer + ";" + SystemInfo.supportsComputeShaders + ";" + SystemInfo.supportsGyroscope + ";" + SystemInfo.supportsImageEffects + ";" + SystemInfo.supportsInstancing + ";" + SystemInfo.supportsRenderTextures + ";" + SystemInfo.supportsRenderToCubemap + ";" + SystemInfo.supportsShadows + ";" + SystemInfo.supportsSparseTextures + ";" + SystemInfo.supportsStencil + ";" + SystemInfo.supportsVibration + ";" + SystemInfo.systemMemorySize + ";" + SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf) + ";" + SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGB4444) + ";" + SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.Depth) + ";" + SystemInfo.graphicsDeviceVersion.StartsWith("Metal") + ";" + Screen.currentResolution.width + ";" + Screen.currentResolution.height + ";" + Screen.dpi + ";";
- 			text = ((!PlatformSettings.IsMobile()) ? (text + "Desktop;") : ((!UniversalInputManager.UsePhoneUI) ? (text + "Tablet;") : (text + "Phone;")));
-@@ -63,7 +64,7 @@ public class Network : IHasUpdate, IService
- 
- 		public int GetApplicationVersion()
- 		{
--			return 201108;
-+			return 201392;
- 		}
- 
- 		private string CleanUserAgentString(string data)
-@@ -97,7 +98,7 @@ public class Network : IHasUpdate, IService
- 
- 		public string GetAuroraVersionName()
- 		{
--			return 201108.ToString();
-+			return 201392.ToString();
- 		}
- 
- 		public string GetLocaleName()
 @@ -301,29 +302,9 @@ public class Network : IHasUpdate, IService
  
  	public class TriggeredEvent
@@ -86415,7 +86270,7 @@ index 94c5cd5..1a3aa90 100644
  			Option.DEBUG_SHOW_BATTLEGROUND_SKIN_IDS,
  			false
 diff --git a/Assembly-CSharp/OptionsMenu.cs b/Assembly-CSharp/OptionsMenu.cs
-index 37d93a7..d326019 100644
+index 9da81fd..d326019 100644
 --- a/Assembly-CSharp/OptionsMenu.cs
 +++ b/Assembly-CSharp/OptionsMenu.cs
 @@ -6,9 +6,11 @@ using Blizzard.T5.Services;
@@ -86431,15 +86286,6 @@ index 37d93a7..d326019 100644
  {
  	public delegate void hideHandler();
  
-@@ -223,7 +225,7 @@ public class OptionsMenu : MonoBehaviour
- 			{
- 				m_fullScreenCheckbox.gameObject.SetActive(value: false);
- 			}
--			string text = string.Format("{0} {1}.{2}", GameStrings.Get("GLOBAL_VERSION"), "29.6", 201108);
-+			string text = string.Format("{0} {1}.{2}", GameStrings.Get("GLOBAL_VERSION"), "29.6", 201392);
- 			string str = Vars.Key("Application.Referral").GetStr("none");
- 			if (str != "none")
- 			{
 @@ -235,6 +237,12 @@ public class OptionsMenu : MonoBehaviour
  		UpdateUI();
  		m_graphicsGroup.GetComponent<MultiSliceElement>().UpdateSlices();
@@ -93275,19 +93121,6 @@ index 4f468b5..40b0470 100644
 +	HM_Puzzle_04 = 5396,
 +	EOE
  }
-diff --git a/Assembly-CSharp/SceneDebugger.cs b/Assembly-CSharp/SceneDebugger.cs
-index a3e04ac..edd5856 100644
---- a/Assembly-CSharp/SceneDebugger.cs
-+++ b/Assembly-CSharp/SceneDebugger.cs
-@@ -723,7 +723,7 @@ public class SceneDebugger : IService, IHasUpdate
- 		float num2 = 3f * lineHeight + num;
- 		GUI.Box(new Rect(space.xMin, space.yMin, m_GUISize.x, num2), m_fpsText);
- 		space.yMin += num2;
--		string text = string.Format("Build: {0}.{1}\nServer: {2}", "29.6", 201108, Network.GetVersion());
-+		string text = string.Format("Build: {0}.{1}\nServer: {2}", "29.6", 201392, Network.GetVersion());
- 		num2 = 2f * lineHeight + num;
- 		IGameDownloadManager gameDownloadManager = GameDownloadManagerProvider.Get();
- 		if ((PlatformSettings.IsMobileRuntimeOS || (Application.isEditor && PlatformSettings.IsEmulating)) && gameDownloadManager != null)
 diff --git a/Assembly-CSharp/SceneMgr.cs b/Assembly-CSharp/SceneMgr.cs
 index 68a7d60..48184c2 100644
 --- a/Assembly-CSharp/SceneMgr.cs
@@ -100333,283 +100166,3 @@ index 847e0e5..5243be5 100644
  {
  	public delegate void UpdateLayoutCompleteCallback(Zone zone, object userData);
  
-diff --git a/Hearthstone_Data/Managed/Appboy.dll b/Hearthstone_Data/Managed/Appboy.dll
-index 31879e6..f5222e0 100644
-Binary files a/Hearthstone_Data/Managed/Appboy.dll and b/Hearthstone_Data/Managed/Appboy.dll differ
-diff --git a/Hearthstone_Data/Managed/AppsFlyer.dll b/Hearthstone_Data/Managed/AppsFlyer.dll
-index 67a06fb..cc4ce90 100644
-Binary files a/Hearthstone_Data/Managed/AppsFlyer.dll and b/Hearthstone_Data/Managed/AppsFlyer.dll differ
-diff --git a/Hearthstone_Data/Managed/Assembly-CSharp-firstpass.dll b/Hearthstone_Data/Managed/Assembly-CSharp-firstpass.dll
-index 5895cb0..7276945 100644
-Binary files a/Hearthstone_Data/Managed/Assembly-CSharp-firstpass.dll and b/Hearthstone_Data/Managed/Assembly-CSharp-firstpass.dll differ
-diff --git a/Hearthstone_Data/Managed/Assembly-CSharp.dll b/Hearthstone_Data/Managed/Assembly-CSharp.dll
-index 9df817f..e2120e1 100644
-Binary files a/Hearthstone_Data/Managed/Assembly-CSharp.dll and b/Hearthstone_Data/Managed/Assembly-CSharp.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.Commerce.Model.CSharp.dll b/Hearthstone_Data/Managed/Blizzard.Commerce.Model.CSharp.dll
-index 08942fe..1095ea5 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.Commerce.Model.CSharp.dll and b/Hearthstone_Data/Managed/Blizzard.Commerce.Model.CSharp.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.Commerce.Wrapper.dll b/Hearthstone_Data/Managed/Blizzard.Commerce.Wrapper.dll
-index 2912d34..a871279 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.Commerce.Wrapper.dll and b/Hearthstone_Data/Managed/Blizzard.Commerce.Wrapper.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.AssetLoader.dll b/Hearthstone_Data/Managed/Blizzard.T5.AssetLoader.dll
-index 416661a..a574a1d 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.AssetLoader.dll and b/Hearthstone_Data/Managed/Blizzard.T5.AssetLoader.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.AssetManager.dll b/Hearthstone_Data/Managed/Blizzard.T5.AssetManager.dll
-index 2f41cdb..24f0525 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.AssetManager.dll and b/Hearthstone_Data/Managed/Blizzard.T5.AssetManager.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.Configuration.dll b/Hearthstone_Data/Managed/Blizzard.T5.Configuration.dll
-index 0818c24..75559c7 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.Configuration.dll and b/Hearthstone_Data/Managed/Blizzard.T5.Configuration.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.Core.dll b/Hearthstone_Data/Managed/Blizzard.T5.Core.dll
-index b7af8c8..c8f7ffe 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.Core.dll and b/Hearthstone_Data/Managed/Blizzard.T5.Core.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.ErrorInterface.dll b/Hearthstone_Data/Managed/Blizzard.T5.ErrorInterface.dll
-index 7dd287e..e59b4d8 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.ErrorInterface.dll and b/Hearthstone_Data/Managed/Blizzard.T5.ErrorInterface.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.FXBuilder.dll b/Hearthstone_Data/Managed/Blizzard.T5.FXBuilder.dll
-index 268483a..e48ca6e 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.FXBuilder.dll and b/Hearthstone_Data/Managed/Blizzard.T5.FXBuilder.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.FontService.dll b/Hearthstone_Data/Managed/Blizzard.T5.FontService.dll
-index 17d771e..e1df7e6 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.FontService.dll and b/Hearthstone_Data/Managed/Blizzard.T5.FontService.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.Game.dll b/Hearthstone_Data/Managed/Blizzard.T5.Game.dll
-index fcf759a..e87f14e 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.Game.dll and b/Hearthstone_Data/Managed/Blizzard.T5.Game.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.GameStringsInterface.dll b/Hearthstone_Data/Managed/Blizzard.T5.GameStringsInterface.dll
-index 8eb010e..579d7b0 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.GameStringsInterface.dll and b/Hearthstone_Data/Managed/Blizzard.T5.GameStringsInterface.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.GraphicsManagerInterface.dll b/Hearthstone_Data/Managed/Blizzard.T5.GraphicsManagerInterface.dll
-index 8b9e960..2ec1d8d 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.GraphicsManagerInterface.dll and b/Hearthstone_Data/Managed/Blizzard.T5.GraphicsManagerInterface.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.JobQueue.dll b/Hearthstone_Data/Managed/Blizzard.T5.JobQueue.dll
-index 61409fc..f2d6a20 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.JobQueue.dll and b/Hearthstone_Data/Managed/Blizzard.T5.JobQueue.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.Localization.dll b/Hearthstone_Data/Managed/Blizzard.T5.Localization.dll
-index 41d7ed5..9cb536c 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.Localization.dll and b/Hearthstone_Data/Managed/Blizzard.T5.Localization.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.Logging.dll b/Hearthstone_Data/Managed/Blizzard.T5.Logging.dll
-index affc3de..6cc2a81 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.Logging.dll and b/Hearthstone_Data/Managed/Blizzard.T5.Logging.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.MaterialService.dll b/Hearthstone_Data/Managed/Blizzard.T5.MaterialService.dll
-index 88c1023..c9f7270 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.MaterialService.dll and b/Hearthstone_Data/Managed/Blizzard.T5.MaterialService.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.MiniJSON.dll b/Hearthstone_Data/Managed/Blizzard.T5.MiniJSON.dll
-index c97a12d..af10f4e 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.MiniJSON.dll and b/Hearthstone_Data/Managed/Blizzard.T5.MiniJSON.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.PlayMaker.Runtime.dll b/Hearthstone_Data/Managed/Blizzard.T5.PlayMaker.Runtime.dll
-index a08b679..bf14fde 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.PlayMaker.Runtime.dll and b/Hearthstone_Data/Managed/Blizzard.T5.PlayMaker.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.PlayMakerCustomActions.Runtime.dll b/Hearthstone_Data/Managed/Blizzard.T5.PlayMakerCustomActions.Runtime.dll
-index 32f16af..d246dfb 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.PlayMakerCustomActions.Runtime.dll and b/Hearthstone_Data/Managed/Blizzard.T5.PlayMakerCustomActions.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.ServiceLocator.dll b/Hearthstone_Data/Managed/Blizzard.T5.ServiceLocator.dll
-index 77a9767..8792744 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.ServiceLocator.dll and b/Hearthstone_Data/Managed/Blizzard.T5.ServiceLocator.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.UI.Core.dll b/Hearthstone_Data/Managed/Blizzard.T5.UI.Core.dll
-index fba7703..3469ab2 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.UI.Core.dll and b/Hearthstone_Data/Managed/Blizzard.T5.UI.Core.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.UberText.Runtime.dll b/Hearthstone_Data/Managed/Blizzard.T5.UberText.Runtime.dll
-index ef49d40..ac175e5 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.UberText.Runtime.dll and b/Hearthstone_Data/Managed/Blizzard.T5.UberText.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.T5.iTween.dll b/Hearthstone_Data/Managed/Blizzard.T5.iTween.dll
-index 9157dd7..24423dc 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.T5.iTween.dll and b/Hearthstone_Data/Managed/Blizzard.T5.iTween.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.Telemetry.Identity.dll b/Hearthstone_Data/Managed/Blizzard.Telemetry.Identity.dll
-index 443bfa4..1899df3 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.Telemetry.Identity.dll and b/Hearthstone_Data/Managed/Blizzard.Telemetry.Identity.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.Telemetry.Sdk.dll b/Hearthstone_Data/Managed/Blizzard.Telemetry.Sdk.dll
-index 8264248..6cc49e6 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.Telemetry.Sdk.dll and b/Hearthstone_Data/Managed/Blizzard.Telemetry.Sdk.dll differ
-diff --git a/Hearthstone_Data/Managed/Blizzard.Telemetry.StandardProtos.BlizzPbc.dll b/Hearthstone_Data/Managed/Blizzard.Telemetry.StandardProtos.BlizzPbc.dll
-index 16716d6..7fe97ed 100644
-Binary files a/Hearthstone_Data/Managed/Blizzard.Telemetry.StandardProtos.BlizzPbc.dll and b/Hearthstone_Data/Managed/Blizzard.Telemetry.StandardProtos.BlizzPbc.dll differ
-diff --git a/Hearthstone_Data/Managed/Mono.Security.dll b/Hearthstone_Data/Managed/Mono.Security.dll
-index 63bd77b..3104962 100644
-Binary files a/Hearthstone_Data/Managed/Mono.Security.dll and b/Hearthstone_Data/Managed/Mono.Security.dll differ
-diff --git a/Hearthstone_Data/Managed/QRCoderUnity.dll b/Hearthstone_Data/Managed/QRCoderUnity.dll
-index 4d0cc8b..7730919 100644
-Binary files a/Hearthstone_Data/Managed/QRCoderUnity.dll and b/Hearthstone_Data/Managed/QRCoderUnity.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Configuration.dll b/Hearthstone_Data/Managed/System.Configuration.dll
-index 237e105..1e493a7 100644
-Binary files a/Hearthstone_Data/Managed/System.Configuration.dll and b/Hearthstone_Data/Managed/System.Configuration.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Core.dll b/Hearthstone_Data/Managed/System.Core.dll
-index 8a08219..9776a0c 100644
-Binary files a/Hearthstone_Data/Managed/System.Core.dll and b/Hearthstone_Data/Managed/System.Core.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Data.dll b/Hearthstone_Data/Managed/System.Data.dll
-index c9830aa..71e2094 100644
-Binary files a/Hearthstone_Data/Managed/System.Data.dll and b/Hearthstone_Data/Managed/System.Data.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Drawing.dll b/Hearthstone_Data/Managed/System.Drawing.dll
-new file mode 100644
-index 0000000..2f06d20
-Binary files /dev/null and b/Hearthstone_Data/Managed/System.Drawing.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Net.Http.dll b/Hearthstone_Data/Managed/System.Net.Http.dll
-index a70dfa0..1f5cb65 100644
-Binary files a/Hearthstone_Data/Managed/System.Net.Http.dll and b/Hearthstone_Data/Managed/System.Net.Http.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Numerics.dll b/Hearthstone_Data/Managed/System.Numerics.dll
-index e1fa113..cedde22 100644
-Binary files a/Hearthstone_Data/Managed/System.Numerics.dll and b/Hearthstone_Data/Managed/System.Numerics.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Runtime.Serialization.dll b/Hearthstone_Data/Managed/System.Runtime.Serialization.dll
-index 0f68eb4..9cf6e1a 100644
-Binary files a/Hearthstone_Data/Managed/System.Runtime.Serialization.dll and b/Hearthstone_Data/Managed/System.Runtime.Serialization.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Security.dll b/Hearthstone_Data/Managed/System.Security.dll
-index 71c8ff1..b4fd136 100644
-Binary files a/Hearthstone_Data/Managed/System.Security.dll and b/Hearthstone_Data/Managed/System.Security.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Xml.Linq.dll b/Hearthstone_Data/Managed/System.Xml.Linq.dll
-index 626200d..679956f 100644
-Binary files a/Hearthstone_Data/Managed/System.Xml.Linq.dll and b/Hearthstone_Data/Managed/System.Xml.Linq.dll differ
-diff --git a/Hearthstone_Data/Managed/System.Xml.dll b/Hearthstone_Data/Managed/System.Xml.dll
-index b7f5573..5b5492b 100644
-Binary files a/Hearthstone_Data/Managed/System.Xml.dll and b/Hearthstone_Data/Managed/System.Xml.dll differ
-diff --git a/Hearthstone_Data/Managed/System.dll b/Hearthstone_Data/Managed/System.dll
-index 150e399..dc7d75d 100644
-Binary files a/Hearthstone_Data/Managed/System.dll and b/Hearthstone_Data/Managed/System.dll differ
-diff --git a/Hearthstone_Data/Managed/UniTask.dll b/Hearthstone_Data/Managed/UniTask.dll
-index 8262c93..d54db27 100644
-Binary files a/Hearthstone_Data/Managed/UniTask.dll and b/Hearthstone_Data/Managed/UniTask.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.Burst.dll b/Hearthstone_Data/Managed/Unity.Burst.dll
-index a0aac9b..17ad0c7 100644
-Binary files a/Hearthstone_Data/Managed/Unity.Burst.dll and b/Hearthstone_Data/Managed/Unity.Burst.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.Mathematics.dll b/Hearthstone_Data/Managed/Unity.Mathematics.dll
-index dab3550..fc69925 100644
-Binary files a/Hearthstone_Data/Managed/Unity.Mathematics.dll and b/Hearthstone_Data/Managed/Unity.Mathematics.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.RenderPipeline.Universal.ShaderLibrary.dll b/Hearthstone_Data/Managed/Unity.RenderPipeline.Universal.ShaderLibrary.dll
-index 47087af..7f0772a 100644
-Binary files a/Hearthstone_Data/Managed/Unity.RenderPipeline.Universal.ShaderLibrary.dll and b/Hearthstone_Data/Managed/Unity.RenderPipeline.Universal.ShaderLibrary.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.RenderPipelines.Core.Runtime.dll b/Hearthstone_Data/Managed/Unity.RenderPipelines.Core.Runtime.dll
-index 94c00c8..4e880d1 100644
-Binary files a/Hearthstone_Data/Managed/Unity.RenderPipelines.Core.Runtime.dll and b/Hearthstone_Data/Managed/Unity.RenderPipelines.Core.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.RenderPipelines.Universal.Runtime.dll b/Hearthstone_Data/Managed/Unity.RenderPipelines.Universal.Runtime.dll
-index 34bc978..278833f 100644
-Binary files a/Hearthstone_Data/Managed/Unity.RenderPipelines.Universal.Runtime.dll and b/Hearthstone_Data/Managed/Unity.RenderPipelines.Universal.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.Timeline.dll b/Hearthstone_Data/Managed/Unity.Timeline.dll
-index 1b000df..4592b5a 100644
-Binary files a/Hearthstone_Data/Managed/Unity.Timeline.dll and b/Hearthstone_Data/Managed/Unity.Timeline.dll differ
-diff --git a/Hearthstone_Data/Managed/Unity.ZombieObjectDetector.Runtime.dll b/Hearthstone_Data/Managed/Unity.ZombieObjectDetector.Runtime.dll
-index 449cd27..a56b809 100644
-Binary files a/Hearthstone_Data/Managed/Unity.ZombieObjectDetector.Runtime.dll and b/Hearthstone_Data/Managed/Unity.ZombieObjectDetector.Runtime.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.AIModule.dll b/Hearthstone_Data/Managed/UnityEngine.AIModule.dll
-index 6e68497..f756890 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.AIModule.dll and b/Hearthstone_Data/Managed/UnityEngine.AIModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.AndroidJNIModule.dll b/Hearthstone_Data/Managed/UnityEngine.AndroidJNIModule.dll
-index 85f134f..2e40433 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.AndroidJNIModule.dll and b/Hearthstone_Data/Managed/UnityEngine.AndroidJNIModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.AnimationModule.dll b/Hearthstone_Data/Managed/UnityEngine.AnimationModule.dll
-index c4ca180..87187f5 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.AnimationModule.dll and b/Hearthstone_Data/Managed/UnityEngine.AnimationModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.AssetBundleModule.dll b/Hearthstone_Data/Managed/UnityEngine.AssetBundleModule.dll
-index 36903a0..c2f1025 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.AssetBundleModule.dll and b/Hearthstone_Data/Managed/UnityEngine.AssetBundleModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.AudioModule.dll b/Hearthstone_Data/Managed/UnityEngine.AudioModule.dll
-index e010975..0828abd 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.AudioModule.dll and b/Hearthstone_Data/Managed/UnityEngine.AudioModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.CoreModule.dll b/Hearthstone_Data/Managed/UnityEngine.CoreModule.dll
-index 5cda2e7..a51c10f 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.CoreModule.dll and b/Hearthstone_Data/Managed/UnityEngine.CoreModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.DirectorModule.dll b/Hearthstone_Data/Managed/UnityEngine.DirectorModule.dll
-index 822f316..689a712 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.DirectorModule.dll and b/Hearthstone_Data/Managed/UnityEngine.DirectorModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.GridModule.dll b/Hearthstone_Data/Managed/UnityEngine.GridModule.dll
-index d95d31f..eb124e6 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.GridModule.dll and b/Hearthstone_Data/Managed/UnityEngine.GridModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.IMGUIModule.dll b/Hearthstone_Data/Managed/UnityEngine.IMGUIModule.dll
-index 6fcf99f..f7d401a 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.IMGUIModule.dll and b/Hearthstone_Data/Managed/UnityEngine.IMGUIModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.ImageConversionModule.dll b/Hearthstone_Data/Managed/UnityEngine.ImageConversionModule.dll
-index 75e625d..06ad6eb 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.ImageConversionModule.dll and b/Hearthstone_Data/Managed/UnityEngine.ImageConversionModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.InputLegacyModule.dll b/Hearthstone_Data/Managed/UnityEngine.InputLegacyModule.dll
-index 890ab67..e715f8c 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.InputLegacyModule.dll and b/Hearthstone_Data/Managed/UnityEngine.InputLegacyModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.InputModule.dll b/Hearthstone_Data/Managed/UnityEngine.InputModule.dll
-index 25a5ef2..5c621b5 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.InputModule.dll and b/Hearthstone_Data/Managed/UnityEngine.InputModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.JSONSerializeModule.dll b/Hearthstone_Data/Managed/UnityEngine.JSONSerializeModule.dll
-index 2466c81..f787316 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.JSONSerializeModule.dll and b/Hearthstone_Data/Managed/UnityEngine.JSONSerializeModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.ParticleSystemModule.dll b/Hearthstone_Data/Managed/UnityEngine.ParticleSystemModule.dll
-index feabb25..8cebf6a 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.ParticleSystemModule.dll and b/Hearthstone_Data/Managed/UnityEngine.ParticleSystemModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.Physics2DModule.dll b/Hearthstone_Data/Managed/UnityEngine.Physics2DModule.dll
-index 7508e45..9f4e05d 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.Physics2DModule.dll and b/Hearthstone_Data/Managed/UnityEngine.Physics2DModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.PhysicsModule.dll b/Hearthstone_Data/Managed/UnityEngine.PhysicsModule.dll
-index d37626a..dfc1f04 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.PhysicsModule.dll and b/Hearthstone_Data/Managed/UnityEngine.PhysicsModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.ScreenCaptureModule.dll b/Hearthstone_Data/Managed/UnityEngine.ScreenCaptureModule.dll
-index 7f13209..eb22824 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.ScreenCaptureModule.dll and b/Hearthstone_Data/Managed/UnityEngine.ScreenCaptureModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.SharedInternalsModule.dll b/Hearthstone_Data/Managed/UnityEngine.SharedInternalsModule.dll
-index e90d48d..6717e62 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.SharedInternalsModule.dll and b/Hearthstone_Data/Managed/UnityEngine.SharedInternalsModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.SpriteShapeModule.dll b/Hearthstone_Data/Managed/UnityEngine.SpriteShapeModule.dll
-index 64cc8f3..8dde18b 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.SpriteShapeModule.dll and b/Hearthstone_Data/Managed/UnityEngine.SpriteShapeModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.SubsystemsModule.dll b/Hearthstone_Data/Managed/UnityEngine.SubsystemsModule.dll
-index ccacd0c..e61de80 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.SubsystemsModule.dll and b/Hearthstone_Data/Managed/UnityEngine.SubsystemsModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.TerrainModule.dll b/Hearthstone_Data/Managed/UnityEngine.TerrainModule.dll
-index b071222..57f52a6 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.TerrainModule.dll and b/Hearthstone_Data/Managed/UnityEngine.TerrainModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.TextCoreFontEngineModule.dll b/Hearthstone_Data/Managed/UnityEngine.TextCoreFontEngineModule.dll
-index d20bc5d..0648365 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.TextCoreFontEngineModule.dll and b/Hearthstone_Data/Managed/UnityEngine.TextCoreFontEngineModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.TextCoreTextEngineModule.dll b/Hearthstone_Data/Managed/UnityEngine.TextCoreTextEngineModule.dll
-index 2ab178d..9d550ba 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.TextCoreTextEngineModule.dll and b/Hearthstone_Data/Managed/UnityEngine.TextCoreTextEngineModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.TextRenderingModule.dll b/Hearthstone_Data/Managed/UnityEngine.TextRenderingModule.dll
-index 8b5cf83..85d21f6 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.TextRenderingModule.dll and b/Hearthstone_Data/Managed/UnityEngine.TextRenderingModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.TilemapModule.dll b/Hearthstone_Data/Managed/UnityEngine.TilemapModule.dll
-index 76cee6c..6ce640a 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.TilemapModule.dll and b/Hearthstone_Data/Managed/UnityEngine.TilemapModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UI.dll b/Hearthstone_Data/Managed/UnityEngine.UI.dll
-index b17a150..386c53d 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UI.dll and b/Hearthstone_Data/Managed/UnityEngine.UI.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UIElementsModule.dll b/Hearthstone_Data/Managed/UnityEngine.UIElementsModule.dll
-index 8a79683..3d75347 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UIElementsModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UIElementsModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UIElementsNativeModule.dll b/Hearthstone_Data/Managed/UnityEngine.UIElementsNativeModule.dll
-index 35011e2..9e20980 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UIElementsNativeModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UIElementsNativeModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UIModule.dll b/Hearthstone_Data/Managed/UnityEngine.UIModule.dll
-index 3e5c62e..0edf5e6 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UIModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UIModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UnityAnalyticsModule.dll b/Hearthstone_Data/Managed/UnityEngine.UnityAnalyticsModule.dll
-index 2e1d11f..1f86afd 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UnityAnalyticsModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UnityAnalyticsModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestModule.dll b/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestModule.dll
-index 91ec4b4..9faf8bf 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll b/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll
-index b7acf58..82c152d 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll and b/Hearthstone_Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.VFXModule.dll b/Hearthstone_Data/Managed/UnityEngine.VFXModule.dll
-index 6a6da23..9538804 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.VFXModule.dll and b/Hearthstone_Data/Managed/UnityEngine.VFXModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.VRModule.dll b/Hearthstone_Data/Managed/UnityEngine.VRModule.dll
-index 9b48b6d..59542fe 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.VRModule.dll and b/Hearthstone_Data/Managed/UnityEngine.VRModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.VideoModule.dll b/Hearthstone_Data/Managed/UnityEngine.VideoModule.dll
-index 5af8daa..cbc9c7c 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.VideoModule.dll and b/Hearthstone_Data/Managed/UnityEngine.VideoModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.WindModule.dll b/Hearthstone_Data/Managed/UnityEngine.WindModule.dll
-index 2a66b72..cfa58f6 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.WindModule.dll and b/Hearthstone_Data/Managed/UnityEngine.WindModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.XRModule.dll b/Hearthstone_Data/Managed/UnityEngine.XRModule.dll
-index 617eda7..d8f2eab 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.XRModule.dll and b/Hearthstone_Data/Managed/UnityEngine.XRModule.dll differ
-diff --git a/Hearthstone_Data/Managed/UnityEngine.dll b/Hearthstone_Data/Managed/UnityEngine.dll
-index 1c7e29d..5337815 100644
-Binary files a/Hearthstone_Data/Managed/UnityEngine.dll and b/Hearthstone_Data/Managed/UnityEngine.dll differ
-diff --git a/Hearthstone_Data/Managed/blizzard.bgsclient.dll b/Hearthstone_Data/Managed/blizzard.bgsclient.dll
-index a1e745f..58d08b3 100644
-Binary files a/Hearthstone_Data/Managed/blizzard.bgsclient.dll and b/Hearthstone_Data/Managed/blizzard.bgsclient.dll differ
-diff --git a/Hearthstone_Data/Managed/blizzard.bgssdk.dll b/Hearthstone_Data/Managed/blizzard.bgssdk.dll
-index eb3d97c..0d3ea1f 100644
-Binary files a/Hearthstone_Data/Managed/blizzard.bgssdk.dll and b/Hearthstone_Data/Managed/blizzard.bgssdk.dll differ
-diff --git a/Hearthstone_Data/Managed/com.blizzard.mobile-unity-auth-sdk.dll b/Hearthstone_Data/Managed/com.blizzard.mobile-unity-auth-sdk.dll
-index 88271c4..470e00c 100644
-Binary files a/Hearthstone_Data/Managed/com.blizzard.mobile-unity-auth-sdk.dll and b/Hearthstone_Data/Managed/com.blizzard.mobile-unity-auth-sdk.dll differ
-diff --git a/Hearthstone_Data/Managed/mscorlib.dll b/Hearthstone_Data/Managed/mscorlib.dll
-index f26bcad..0e77111 100644
-Binary files a/Hearthstone_Data/Managed/mscorlib.dll and b/Hearthstone_Data/Managed/mscorlib.dll differ
