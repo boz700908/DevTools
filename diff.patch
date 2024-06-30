@@ -3969,10 +3969,10 @@ index 0000000..f68be9f
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 0000000..11168bd
+index 0000000..855834a
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,2938 @@
+@@ -0,0 +1,2939 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -4017,6 +4017,7 @@ index 0000000..11168bd
 +            PASSING_CARD,
 +            VIEWING_TEAMMATES_BOARD,
 +            VIEWING_TEAMMATES_CHOICES,
++            TEAMMATES_CHOICES_HIDDEN,
 +            READING_LEADERBOARD,
 +        }
 +
@@ -18095,10 +18096,10 @@ index 0000000..20d9067
 +}
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
 new file mode 100644
-index 0000000..6d7d8bd
+index 0000000..19dd9e7
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
-@@ -0,0 +1,2099 @@
+@@ -0,0 +1,2158 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -18142,6 +18143,8 @@ index 0000000..6d7d8bd
 +        private AccessibleInGameState m_lastDescribedState; // Used for storing the state of the board (i.e. Entity clones) at the start of a combat phase
 +
 +        private int m_numTeamsAlive; // Used for saying x players died at the start of recruit phase
++
++        private AccessibleListOfItems<AccessibleBattlegroundsCard> m_teammatesChoiceCards;
 +
 +		internal override void OnBattlegroundsCombatPhasePopupShown()
 +		{
@@ -18580,9 +18583,14 @@ index 0000000..6d7d8bd
 +                    HandlePassingCard();
 +                    return;
 +                    case AccessibleGameState.VIEWING_TEAMMATES_BOARD:
++                    case AccessibleGameState.TEAMMATES_CHOICES_HIDDEN:
 +                    HandleCardReadingInput();
 +                    HandleCheckStatusKeys();
 +                    HandleViewingTeammatesBoard();
++                    return;
++                    case AccessibleGameState.VIEWING_TEAMMATES_CHOICES:
++                    HandleCheckStatusKeys();
++                    HandleViewingTeammatesChoices();
 +                    return;
 +                default:
 +                    return;
@@ -18921,6 +18929,29 @@ index 0000000..6d7d8bd
 +            else if (m_viewingTeammatesBoard)
 +            {
 +                m_curState = AccessibleGameState.VIEWING_TEAMMATES_BOARD;
++
++                var teammateDiscoverViewer = TeammateBoardViewer.Get().GetViewer<TeammateDiscoverViewer>();
++                if (teammateDiscoverViewer == null)
++                {
++                    return;
++                }
++                if (teammateDiscoverViewer.IsActive())
++                {
++                    m_curState = teammateDiscoverViewer.IsShowingChoices() ? AccessibleGameState.VIEWING_TEAMMATES_CHOICES : AccessibleGameState.TEAMMATES_CHOICES_HIDDEN;
++
++                    if (m_curState != m_prevState)
++                    {
++                        if (m_curState == AccessibleGameState.VIEWING_TEAMMATES_CHOICES)
++                        {
++                            AccessibilityMgr.Output(this, GameStrings.Get("GAMEPLAY_CHOOSE_ONE"));
++                            m_teammatesChoiceCards.StartReading();
++                        }
++                        else if (m_curState == AccessibleGameState.TEAMMATES_CHOICES_HIDDEN)
++                        {
++                            AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_CHOICES_HIDDEN));
++                        }
++                    }
++                }
 +            }
 +            else if (GameState.Get().IsInMainOptionMode())
 +            {
@@ -19119,6 +19150,29 @@ index 0000000..6d7d8bd
 +			{
 +                QueryRefreshTavern();
 +			}
++
++            if (m_curState == AccessibleGameState.TEAMMATES_CHOICES_HIDDEN && AccessibleKey.READ_NEXT_VALID_ITEM.IsPressed())
++            {
++                TeammateBoardViewer.Get().GetViewer<TeammateDiscoverViewer>().GetToggleButton().TriggerRelease();
++            }
++        }
++
++        private void HandleViewingTeammatesChoices()
++        {
++            if (m_teammatesChoiceCards == null)
++            {
++                return;
++            }
++
++            m_cardBeingRead = m_teammatesChoiceCards.GetItemBeingRead();
++            if (AccessibleKey.READ_NEXT_VALID_ITEM.IsPressed())
++            {
++                TeammateBoardViewer.Get().GetViewer<TeammateDiscoverViewer>().GetToggleButton().TriggerRelease();
++            }
++            else
++            {
++                m_teammatesChoiceCards.HandleAccessibleInput();
++            }
 +        }
 +
 +        private void ClickCard()
@@ -20111,6 +20165,12 @@ index 0000000..6d7d8bd
 +            Gameplay.Get().StartCoroutine(FastApplyPingToActor(GetActorToPing(), pingType));
 +        }
 +        #endregion
++
++        internal void OnAddTeammateDiscoverEntitiesToViewer(List<Card> cards)
++        {
++            var accessibleCards = cards.Select((c) => new AccessibleBattlegroundsCard(this, c)).ToList();
++            m_teammatesChoiceCards = new AccessibleListOfItems<AccessibleBattlegroundsCard>(this, accessibleCards);
++        }
 +
 +        #region Help
 +
@@ -96787,6 +96847,52 @@ index 91793cc..5b1f063 100644
 +			}
 +		}
 +		return null;
++	}
++	#endregion
+ }
+diff --git a/Assembly-CSharp/TeammateDiscoverViewer.cs b/Assembly-CSharp/TeammateDiscoverViewer.cs
+index 2deb2ac..37059c7 100644
+--- a/Assembly-CSharp/TeammateDiscoverViewer.cs
++++ b/Assembly-CSharp/TeammateDiscoverViewer.cs
+@@ -1,4 +1,5 @@
+ using System.Collections.Generic;
++using Accessibility;
+ using PegasusGame;
+ using UnityEngine;
+ 
+@@ -146,6 +147,8 @@ public class TeammateDiscoverViewer : TeammateViewer
+ 		}
+ 		SetToggleButtonActive(m_discoverToggleButton, active: true);
+ 		UpdateDiscoverToggleButton(show: true);
++
++		(AccessibleGameplay.Get() as AccessibleBattlegroundsGameplay)?.OnAddTeammateDiscoverEntitiesToViewer(GetChoiceCards());
+ 	}
+ 
+ 	public void ChooseEntitySelected(TeammatesEntitiesChosen entityChosen)
+@@ -182,4 +185,26 @@ public class TeammateDiscoverViewer : TeammateViewer
+ 			m_chosenActor = null;
+ 		}
+ 	}
++
++	#region Accessibility
++	internal List<Card> GetChoiceCards()
++	{
++		return m_discoverCardsState.m_cards;
++	}
++
++	internal bool IsShowingChoices()
++	{
++		return m_discoverChoicesShown;
++	}
++
++	internal bool IsActive()
++	{
++		return GetChoiceCards().Count > 0;
++	}
++
++	internal NormalButton GetToggleButton()
++	{
++		return m_discoverToggleButton;
 +	}
 +	#endregion
  }
