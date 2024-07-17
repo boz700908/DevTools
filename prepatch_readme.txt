@@ -172,6 +172,23 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-07-16
+
+- Updated to Hearthstone version 30.0.0.203120 (contributed by Endefx)
+- Improvements for the mod's handling of locations (all contributed by Endefx):
+- - When a location is reopened or destroyed, this will now be narrated
+- - When the opponent or spectated player plays a location, the full text is now read (the behavior now matches other card types)
+
+### 2024-06-18
+
+- Updated to Hearthstone version 29.6.0.201392
+
+### 2024-06-17
+
+- Updated to Hearthstone version 29.6.0.201108 (contributed by Endefx)
+- The Dungeon Run and Monster Hunt adventures are now accessible (contributed by Endefx)
+- Fixed an issue where health changes to heroes in Twist were not being reflected properly (contributed by Endefx)
+
 ### 2024-06-01
 
 - Implemented full support for the "Whizbang’s Heroes" season in Twist (contributed by Endefx)
