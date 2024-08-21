@@ -18224,10 +18224,10 @@ index 00000000..20d90672
 +}
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
 new file mode 100644
-index 00000000..a89aa84a
+index 00000000..2f7611bc
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
-@@ -0,0 +1,2207 @@
+@@ -0,0 +1,2212 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -19172,7 +19172,12 @@ index 00000000..a89aa84a
 +                return;
 +			}
 +
-+            if (m_cardBeingRead != null)
++            if (m_curState == AccessibleGameState.CHOICE_MODE || m_curState == AccessibleGameState.SUB_OPTION_MODE)
++            {
++                m_accessibleChoiceCards.StartReading();
++            }
++
++            else if (m_cardBeingRead != null)
 +			{
 +                // Reread zone regardless
 +                var card = m_cardBeingRead.GetCard();
@@ -96923,6 +96928,19 @@ index 6cb1f289..ce1b00aa 100644
  
  	public override void InitZones(Vector3 teammateBoardPos)
  	{
+diff --git a/Assembly-CSharp/TeammateViewer.cs b/Assembly-CSharp/TeammateViewer.cs
+index 0e41c68c..911c2369 100644
+--- a/Assembly-CSharp/TeammateViewer.cs
++++ b/Assembly-CSharp/TeammateViewer.cs
+@@ -3,7 +3,7 @@ using System.Linq;
+ using PegasusGame;
+ using UnityEngine;
+ 
+-public class TeammateViewer : Object
++public class TeammateViewer
+ {
+ 	protected Vector3 m_teammateBoardPosition;
+ 
 diff --git a/Assembly-CSharp/TextUtils.cs b/Assembly-CSharp/TextUtils.cs
 index 836815e4..c81edb96 100644
 --- a/Assembly-CSharp/TextUtils.cs

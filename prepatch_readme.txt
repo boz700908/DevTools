@@ -172,6 +172,16 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-08-21
+
+- Fixed a hang caused by viewing the leaderboard while choosing a trinket in Battlegrounds (contributed by Endefx)
+
+### 2024-08-20
+
+- Updated to Hearthstone version 30.2.0.205267 (contributed by Endefx)
+- It is now possible to read the cost of a minion on the board (contributed by Endefx)
+- Added support for the new trinkets mechanic in Battlegrounds. While playing, press Q to view your trinkets, Shift+Q to view those of your opponent (contributed by Endefx)
+
 ### 2024-07-16
 
 - Updated to Hearthstone version 30.0.0.203120 (contributed by Endefx)
