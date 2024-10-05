@@ -2312,10 +2312,10 @@ index 00000000..75b068e6
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleCard.cs b/Assembly-CSharp/Accessibility/AccessibleCard.cs
 new file mode 100644
-index 00000000..24182088
+index 00000000..003de562
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleCard.cs
-@@ -0,0 +1,297 @@
+@@ -0,0 +1,295 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Text;
@@ -2365,31 +2365,29 @@ index 00000000..24182088
 +		}
 +
 +		protected void AddTrailingHeader(List<string> ret)
-+		{
++        {
 +            if (AccessibleCardUtils.IsCursed(m_card.GetEntity()))
-+			{
++            {
 +                ret.Add(LocalizationUtils.Get(LocalizationKey.GLOBAL_CURSED));
-+			}
-+            if(m_card.GetEntity().HasTag(GAME_TAG.VALEERASHADOW)) {
++            }
++            if (m_card.GetEntity().HasTag(GAME_TAG.VALEERASHADOW))
++            {
 +                ret.Add(LocalizationUtils.Get(LocalizationKey.GLOBAL_HAUNTED));
 +            }
 +            if (AccessibleCardUtils.IsReady(m_card))
-+			{
++            {
 +                ret.Add(LocalizationUtils.Get(LocalizationKey.GLOBAL_READY));
-+			}
++            }
 +
 +            if (m_card.GetEntity().GetZone() == TAG_ZONE.SECRET && m_card.GetEntity().IsObjective())
 +            {
 +                ret.Add(m_card.GetEntity().GetCustomObjectiveBannerText());
 +            }
 +
-+            if (GameMgr.Get().IsBattlegroundDuoGame() && m_card.GetActor().GetActivePingType() != TEAMMATE_PING_TYPE.INVALID)
-+            {
-+                ret.Add(LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_CARD_PINGED_LINE, AccessibleBattlegroundsGameplay.GetPingName(m_card.GetActor().GetActivePingType())));
-+            }
-+		}
++            AccessibleCardUtils.AddLineIfExists(AccessibleCardUtils.GetCardPingedText(m_card.GetActor()), ret);
++        }
 +
-+		protected string GetName()
++        protected string GetName()
 +        {
 +            if (m_card.GetEntity().IsHero() && m_card.GetEntity().GetZone() == TAG_ZONE.PLAY)
 +            {
@@ -2615,10 +2613,10 @@ index 00000000..24182088
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleCardUtils.cs b/Assembly-CSharp/Accessibility/AccessibleCardUtils.cs
 new file mode 100644
-index 00000000..c4110da3
+index 00000000..03cb950a
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleCardUtils.cs
-@@ -0,0 +1,448 @@
+@@ -0,0 +1,457 @@
 +﻿using System;
 +using System.Collections.Generic;
 +
@@ -3064,6 +3062,15 @@ index 00000000..c4110da3
 +        {
 +            var entityDef = DefLoader.Get().GetEntityDef(anomalyId);
 +            return LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_READ_ANOMALY, entityDef.GetName(), entityDef.GetCardTextInHand());
++        }
++
++        internal static string GetCardPingedText(Actor actor)
++        {
++            if (GameMgr.Get().IsBattlegroundDuoGame() && actor.GetActivePingType() != TEAMMATE_PING_TYPE.INVALID)
++            {
++                return LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_CARD_PINGED_LINE, AccessibleBattlegroundsGameplay.GetPingName(actor.GetActivePingType()));
++            }
++            return null;
 +        }
 +    }
 +}
@@ -18224,10 +18231,10 @@ index 00000000..20d90672
 +}
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
 new file mode 100644
-index 00000000..2f7611bc
+index 00000000..9aa86cb5
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
-@@ -0,0 +1,2212 @@
+@@ -0,0 +1,2236 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -18968,7 +18975,7 @@ index 00000000..2f7611bc
 +                confirmAction();
 +                return true;
 +			}
-+			else if (Input.anyKeyDown)
++			else if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && Input.anyKeyDown) // Ignore Shift for cancelation purposes so that we can still ping game mode buttons
 +            {
 +                cancelAction();
 +            }
@@ -19431,6 +19438,12 @@ index 00000000..2f7611bc
 +            var refreshCost = refreshButtonCard.GetEntity().GetCost();
 +
 +            AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_REFRESH_TAVERN_FOR_N_GOLD, refreshCost));
++
++            var pingedText = AccessibleCardUtils.GetCardPingedText(refreshButtonCard.GetActor());
++            if (pingedText != null)
++            {
++                AccessibilityMgr.Output(this, pingedText);
++            }
 +		}
 +
 +		private void ForceRefreshTavern()
@@ -19487,6 +19500,12 @@ index 00000000..2f7611bc
 +            m_unfreezingTavern = true;
 +
 +			AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_UNFREEZE_TAVERN));
++
++            var pingedText = AccessibleCardUtils.GetCardPingedText(freezeButtonCard.GetActor());
++            if (pingedText != null)
++            {
++                AccessibilityMgr.Output(this, pingedText);
++            }
 +		}
 +
 +		private void QueryFreezeTavern()
@@ -19512,6 +19531,12 @@ index 00000000..2f7611bc
 +			{
 +				AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_FREEZE_TAVERN_FOR_N_GOLD, freezeCost));
 +			}
++
++            var pingedText = AccessibleCardUtils.GetCardPingedText(freezeButtonCard.GetActor());
++            if (pingedText != null)
++            {
++                AccessibilityMgr.Output(this, pingedText);
++            }
 +		}
 +
 +		private void QueryUpgradeTavern()
@@ -19530,6 +19555,12 @@ index 00000000..2f7611bc
 +            var upgradeCost = upgradeButtonCard.GetEntity().GetCost();
 +
 +            AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_UPGRADE_TAVERN_FOR_N_GOLD, upgradeCost));
++
++            var pingedText = AccessibleCardUtils.GetCardPingedText(upgradeButtonCard.GetActor());
++            if (pingedText != null)
++            {
++                AccessibilityMgr.Output(this, pingedText);
++            }
 +		}
 +
 +		private void ForceUpgradeTavern()
