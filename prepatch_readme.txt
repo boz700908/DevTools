@@ -172,6 +172,11 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-10-10
+
+- Updated to Hearthstone version 30.6.0.208591 (contributed by Endefx)
+- Fixed a bug that locked some players out of the arena (contributed by Endefx)
+
 ### 2024-09-10
 
 - Updated to Hearthstone version 30.4.0.206605 (contributed by Endefx)
