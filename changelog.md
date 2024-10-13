@@ -1,3 +1,8 @@
+### 2024-10-13
+
+- Players in China are now able to access the in-game shop (contributed by Endefx)
+- Fixed some inaccessible popups that were appearing for Chinese players (contributed by Endefx)
+
 ### 2024-10-10
 
 - Updated to Hearthstone version 30.6.0.208591 (contributed by Endefx)

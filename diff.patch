@@ -1428,10 +1428,10 @@ index 00000000..bc4b6cd3
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibilityUtils.cs b/Assembly-CSharp/Accessibility/AccessibilityUtils.cs
 new file mode 100644
-index 00000000..8851cfeb
+index 00000000..ea1b5993
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibilityUtils.cs
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,497 @@
 +﻿using Assets;
 +using Hearthstone.UI;
 +using System;
@@ -1542,7 +1542,8 @@ index 00000000..8851cfeb
 +
 +        internal static bool CanSeeShop()
 +        {
-+            return ShopUtils.GetVirtualCurrencyMode() != VirtualCurrencyMode.China;
++            return true; // not needed ATM
++            // return ShopUtils.GetVirtualCurrencyMode() != VirtualCurrencyMode.China;
 +        }
 +
 +        internal static bool CanPlayPvP()
@@ -22198,7 +22199,7 @@ index 00000000..650a89a8
 +}
 diff --git a/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs b/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs
 new file mode 100644
-index 00000000..51529554
+index 00000000..40b169dd
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs
 @@ -0,0 +1,2422 @@
@@ -23424,14 +23425,14 @@ index 00000000..51529554
 +            m_curState = State.BROWSING_DECKS_FOR_EDITING;
 +        }
 +
-+        internal void OnFinishRenamingDeck()
++        internal void OnFinishRenamingDeck(bool forceReread = false)
 +        {
 +            if (m_curMode != Mode.TRADITIONAL)
 +            {
 +                return;
 +            }
 +
-+            if (m_curState == State.EDIT_DECK_RENAME_DECK)
++            if (m_curState == State.EDIT_DECK_RENAME_DECK || forceReread)
 +            {
 +                // Prevent against rename notifications when the deck closes
 +                SetupEditDeckMenu();
@@ -26529,10 +26530,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..9b51633c
+index 00000000..00c8c414
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1227 @@
+@@ -0,0 +1,1233 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -27278,6 +27279,7 @@ index 00000000..9b51633c
 +    // Shop
 +    public static LocalizationKey UI_SHOP_READ_GOLD = CreateKey("ACCESSIBILITY_UI_SHOP_READ_GOLD");
 +    public static LocalizationKey UI_SHOP_READ_RUNESTONES = CreateKey("ACCESSIBILITY_UI_SHOP_READ_RUNESTONES");
++    public static LocalizationKey UI_SHOP_READ_ARCANE_ORBS = CreateKey("ACCESSIBILITY_UI_SHOP_READ_ARCANE_ORBS");
 +    public static LocalizationKey UI_SHOP_BUY_PACKS = CreateKey("ACCESSIBILITY_UI_SHOP_BUY_PACKS");
 +    public static LocalizationKey UI_SHOP_BUY_MINI_SETS = CreateKey("ACCESSIBILITY_UI_SHOP_BUY_MINI_SETS");
 +    public static LocalizationKey UI_SHOP_BUY_HERO_SKINS = CreateKey("ACCESSIBILITY_UI_SHOP_BUY_HERO_SKINS");
@@ -27286,12 +27288,17 @@ index 00000000..9b51633c
 +    public static LocalizationKey UI_SHOP_ITEM_READ_DESCRIPTION = CreateKey("ACCESSIBILITY_UI_SHOP_ITEM_READ_DESCRIPTION");
 +    public static LocalizationKey UI_SHOP_ITEM_BUY_FOR_N_GOLD = CreateKey("ACCESSIBILITY_UI_SHOP_ITEM_BUY_FOR_N_GOLD");
 +    public static LocalizationKey UI_SHOP_ITEM_BUY_FOR_N_RUNESTONES = CreateKey("ACCESSIBILITY_UI_SHOP_ITEM_BUY_FOR_N_RUNESTONES");
++    public static LocalizationKey UI_SHOP_ITEM_BUY_FOR_N_ARCANE_ORBS = CreateKey("ACCESSIBILITY_UI_SHOP_ITEM_BUY_FOR_N_ARCANE_ORBS");
 +    public static LocalizationKey UI_SHOP_ITEM_GET_FOR_FREE = CreateKey("ACCESSIBILITY_UI_SHOP_ITEM_GET_FOR_FREE");
 +    public static LocalizationKey UI_SHOP_READ_CARDS = CreateKey("ACCESSIBILITY_UI_SHOP_READ_CARDS");
 +    public static LocalizationKey UI_SHOP_READ_CARDS_HELP = CreateKey("ACCESSIBILITY_UI_SHOP_READ_CARDS_HELP");
 +    public static LocalizationKey UI_SHOP_PURCHASE_COMPLETE_GOLD_REMAINING = CreateKey("ACCESSIBILITY_UI_SHOP_PURCHASE_COMPLETE_GOLD_REMAINING");
 +    public static LocalizationKey UI_SHOP_PURCHASE_COMPLETE_RUNESTONES_REMAINING = CreateKey("ACCESSIBILITY_UI_SHOP_PURCHASE_COMPLETE_RUNESTONES_REMAINING");
++    public static LocalizationKey UI_SHOP_PURCHASE_COMPLETE_ARCANE_ORBS_REMAINING = CreateKey("ACCESSIBILITY_UI_SHOP_PURCHASE_COMPLETE_ARCANE_ORBS_REMAINING");
 +    public static LocalizationKey UI_SHOP_NOT_ENOUGH_RUNESTONES = CreateKey("ACCESSIBILITY_UI_SHOP_NOT_ENOUGH_RUNESTONES");
++    public static LocalizationKey UI_SHOP_NOT_ENOUGH_ARCANE_ORBS = CreateKey("ACCESSIBILITY_UI_SHOP_NOT_ENOUGH_ARCANE_ORBS");
++    public static LocalizationKey UI_SHOP_CURRENCY_CONVERSION_PAGE_HELP = CreateKey("ACCESSIBILITY_UI_SHOP_CURRENCY_CONVERSION_PAGE_HELP");
++    public static LocalizationKey UI_SHOP_CURRENCY_CONVERSION_PAGE_MAX_AMOUNT = CreateKey("ACCESSIBILITY_UI_SHOP_CURRENCY_CONVERSION_PAGE_MAX_AMOUNT");
 +
 +    // Screens
 +    public static LocalizationKey SCREEN_GO_BACK = CreateKey("ACCESSIBILITY_SCREEN_GO_BACK");
@@ -28531,10 +28538,10 @@ index 00000000..7422d752
 +}
 diff --git a/Assembly-CSharp/Accessibility/Shop/AccessibleShopUtils.cs b/Assembly-CSharp/Accessibility/Shop/AccessibleShopUtils.cs
 new file mode 100644
-index 00000000..788ddef4
+index 00000000..77986e8c
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Shop/AccessibleShopUtils.cs
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,227 @@
 +﻿using Blizzard.T5.Services;
 +using Hearthstone.DataModels;
 +using Hearthstone.UI;
@@ -28550,7 +28557,7 @@ index 00000000..788ddef4
 +	{
 +		internal static bool IsAccessibleCurrency(CurrencyType currency)
 +		{
-+			return currency == CurrencyType.GOLD || currency == CurrencyType.ROW_RUNESTONES;
++			return currency == CurrencyType.GOLD || currency == CurrencyType.ROW_RUNESTONES || currency == CurrencyType.CN_RUNESTONES || currency == CurrencyType.CN_ARCANE_ORBS;
 +		}
 +
 +		internal static bool CanProductOrVariantsBeBoughtAccessibly(ProductDataModel dataModel)
@@ -28627,9 +28634,13 @@ index 00000000..788ddef4
 +			{
 +				return LocalizationUtils.Format(LocalizationKey.UI_SHOP_ITEM_BUY_FOR_N_GOLD, cost);
 +			}
-+			else if (price.Currency == CurrencyType.ROW_RUNESTONES)
++			else if (price.Currency == CurrencyType.ROW_RUNESTONES || price.Currency == CurrencyType.CN_RUNESTONES)
 +			{
 +				return LocalizationUtils.Format(LocalizationKey.UI_SHOP_ITEM_BUY_FOR_N_RUNESTONES, cost);
++			}
++			else if (price.Currency == CurrencyType.CN_ARCANE_ORBS)
++			{
++				return LocalizationUtils.Format(LocalizationKey.UI_SHOP_ITEM_BUY_FOR_N_ARCANE_ORBS, cost);
 +			}
 +			else
 +			{
@@ -28706,7 +28717,13 @@ index 00000000..788ddef4
 +
 +		internal static long GetRunestoneBalance()
 +		{
-+			return ServiceManager.Get<CurrencyManager>().GetBalance(CurrencyType.ROW_RUNESTONES);
++			var currency = ShopUtils.GetVirtualCurrencyMode() == VirtualCurrencyMode.China ? CurrencyType.CN_RUNESTONES : CurrencyType.ROW_RUNESTONES;
++			return ServiceManager.Get<CurrencyManager>().GetBalance(currency);
++		}
++
++		internal static long GetArcaneOrbBalance()
++		{
++			return ServiceManager.Get<CurrencyManager>().GetBalance(CurrencyType.CN_ARCANE_ORBS);
 +		}
 +
 +		internal static bool HasEnoughToBuyVariant(PriceDataModel price)
@@ -28726,6 +28743,13 @@ index 00000000..788ddef4
 +			AccessibilityMgr.Output(speaker, LocalizationUtils.Format(LocalizationKey.UI_REWARD_N_RUNESTONES, runestones));
 +		}
 +
++				internal static void ReadArcaneOrbs(AccessibleComponent speaker)
++		{
++			var orbs = GetArcaneOrbBalance();
++			AccessibilityMgr.Output(speaker, LocalizationUtils.Format(LocalizationKey.UI_REWARD_N_ARCANE_ORBS, orbs));
++		}
++
++
 +		internal static void ReadRemainingGold(AccessibleComponent speaker)
 +		{
 +			var gold = GetGoldBalance();
@@ -28736,6 +28760,12 @@ index 00000000..788ddef4
 +		{
 +			var runestones = GetRunestoneBalance();
 +			AccessibilityMgr.Output(speaker, LocalizationUtils.Format(LocalizationKey.UI_SHOP_PURCHASE_COMPLETE_RUNESTONES_REMAINING, runestones));
++		}
++
++		internal static void ReadRemainingArcaneOrbs(AccessibleComponent speaker)
++		{
++			var orbs = GetArcaneOrbBalance();
++			AccessibilityMgr.Output(speaker, LocalizationUtils.Format(LocalizationKey.UI_SHOP_PURCHASE_COMPLETE_ARCANE_ORBS_REMAINING, orbs));
 +		}
 +	}
 +}
@@ -48470,6 +48500,117 @@ index 91be04c4..85a09e0b 100644
  		if ((bool)UniversalInputManager.UsePhoneUI)
  		{
  			BnetBar.Get().ToggleActive(active: true);
+diff --git a/Assembly-CSharp/CollectionManagerSpinnerPopup.cs b/Assembly-CSharp/CollectionManagerSpinnerPopup.cs
+index e86060b0..f646f829 100644
+--- a/Assembly-CSharp/CollectionManagerSpinnerPopup.cs
++++ b/Assembly-CSharp/CollectionManagerSpinnerPopup.cs
+@@ -1,9 +1,10 @@
+ using System;
+ using Hearthstone.UI;
+ using UnityEngine;
++using Accessibility;
+ 
+ [CustomEditClass]
+-public class CollectionManagerSpinnerPopup : UIBPopup
++public class CollectionManagerSpinnerPopup : UIBPopup, AccessibleUI
+ {
+ 	private enum PopupState
+ 	{
+@@ -62,6 +63,8 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 	{
+ 		if (!m_shown)
+ 		{
++			AccessibilityMgr.ShowUI(this);
++
+ 			m_OkListener = OnPlayerClicksOk;
+ 			SetState(PopupState.Waiting);
+ 			m_shown = true;
+@@ -96,6 +99,8 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 				m_spell.ActivateState(SpellStateType.NONE);
+ 				UIContext.GetRoot().DismissPopup(base.gameObject);
+ 			});
++
++			AccessibilityMgr.HideUI(this);
+ 		}
+ 	}
+ 
+@@ -158,6 +163,8 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		m_failDetailsText.gameObject.SetActive(value: false);
+ 		m_okButton.gameObject.SetActive(value: false);
+ 		m_currentWaitingTime = 0f;
++
++		AccessibilityMgr.Output(this, m_waitingText.Text);
+ 	}
+ 
+ 	private void StartSuccessState()
+@@ -168,6 +175,9 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		m_failDetailsText.gameObject.SetActive(value: false);
+ 		m_okButton.gameObject.SetActive(value: true);
+ 		m_spell.ActivateState(SpellStateType.ACTION);
++
++		AccessibilityMgr.Output(this, m_successHeadlineText.Text);
++		AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.PRESS_KEY_TO_CONTINUE, AccessibleKey.CONFIRM));
+ 	}
+ 
+ 	private void StartFailureState()
+@@ -179,6 +189,10 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		m_failDetailsText.gameObject.SetActive(value: true);
+ 		m_okButton.gameObject.SetActive(value: true);
+ 		m_spell.ActivateState(SpellStateType.DEATH);
++
++		AccessibilityMgr.Output(this, m_failHeadlineText.Text);
++		AccessibilityMgr.Output(this, m_failDetailsText.Text);
++		AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.PRESS_KEY_TO_CONTINUE, AccessibleKey.CONFIRM));
+ 	}
+ 
+ 	private void StartTimeoutState()
+@@ -190,6 +204,10 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		m_failDetailsText.gameObject.SetActive(value: true);
+ 		m_okButton.gameObject.SetActive(value: true);
+ 		m_spell.ActivateState(SpellStateType.DEATH);
++
++		AccessibilityMgr.Output(this, m_failHeadlineText.Text);
++		AccessibilityMgr.Output(this, m_failDetailsText.Text);
++		AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.PRESS_KEY_TO_CONTINUE, AccessibleKey.CONFIRM));
+ 	}
+ 
+ 	private void StartFinishedState()
+@@ -197,6 +215,8 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		m_OkListener = null;
+ 		m_okButton.gameObject.SetActive(value: false);
+ 		Hide();
++
++		AccessibleCollectionManager.Get().OnFinishRenamingDeck(forceReread: true);
+ 	}
+ 
+ 	private void SetupButton()
+@@ -221,4 +241,26 @@ public class CollectionManagerSpinnerPopup : UIBPopup
+ 		}
+ 		SetState(PopupState.Finished);
+ 	}
++
++	#region Accessibility
++	public void HandleAccessibleInput()
++	{
++		if ((m_currentState == PopupState.Success || m_currentState == PopupState.Failure || m_currentState == PopupState.Timeout) && AccessibleKey.CONFIRM.IsPressed())
++		{
++			m_okButton.TriggerRelease();
++		}
++	}
++
++	public string GetAccessibleHelp()
++	{
++		if (m_currentState == PopupState.Success || m_currentState == PopupState.Failure || m_currentState == PopupState.Timeout)
++		{
++			return LocalizationUtils.Format(LocalizationKey.PRESS_KEY_TO_CONTINUE, AccessibleKey.CONFIRM);
++		}
++		else
++		{
++			return LocalizedText.GLOBAL_LOADING;
++		}
++	}
++	#endregion
+ }
 diff --git a/Assembly-CSharp/CollectionPageDisplay.cs b/Assembly-CSharp/CollectionPageDisplay.cs
 index 59bfb8f2..1c9e818a 100644
 --- a/Assembly-CSharp/CollectionPageDisplay.cs
@@ -57352,19 +57493,33 @@ index add1d1b8..1d697949 100644
  	}
  }
 diff --git a/Assembly-CSharp/CurrencyConversionPage.cs b/Assembly-CSharp/CurrencyConversionPage.cs
-index 21096e4b..c5dc8a7a 100644
+index 21096e4b..af95bc6c 100644
 --- a/Assembly-CSharp/CurrencyConversionPage.cs
 +++ b/Assembly-CSharp/CurrencyConversionPage.cs
-@@ -63,7 +63,7 @@ public class CurrencyConversionPage : ProductPage
+@@ -4,9 +4,12 @@ using Blizzard.T5.Services;
+ using Hearthstone.DataModels;
+ using Hearthstone.Store;
+ using UnityEngine;
++using Accessibility;
+ 
+-public class CurrencyConversionPage : ProductPage
++public class CurrencyConversionPage : ProductPage, AccessibleUI
+ {
++	// Note. Unlike Every other product page, this one does not have a container.
++
+ 	[SerializeField]
+ 	private PegUIElement m_buttonIncrease;
+ 
+@@ -63,7 +66,7 @@ public class CurrencyConversionPage : ProductPage
  
  	public void OpenToSKU(float desiredAmount)
  	{
 -		Open();
-+		Open(false);
++		Open(true);
  		if (m_baseQuantity > 0f)
  		{
  			m_selectedQuantity = ClampSelection(Mathf.CeilToInt(desiredAmount / m_baseQuantity));
-@@ -71,9 +71,9 @@ public class CurrencyConversionPage : ProductPage
+@@ -71,9 +74,9 @@ public class CurrencyConversionPage : ProductPage
  		}
  	}
  
@@ -57372,10 +57527,77 @@ index 21096e4b..c5dc8a7a 100644
 +	public override void Open(bool isAccessible)
  	{
 -		base.Open();
-+		base.Open(false);
++		base.Open(true);
  		if (m_productImmutable == null)
  		{
  			ProductDataModel dataModel = m_widget.GetDataModel<ProductDataModel>();
+@@ -81,6 +84,8 @@ public class CurrencyConversionPage : ProductPage
+ 		}
+ 		m_baseQuantity = GetCurrencyItem()?.Currency.Amount ?? 0f;
+ 		UpdateConstraints();
++
++		ReadConversionPage();
+ 	}
+ 
+ 	private void OnSliderUpdated(float val)
+@@ -161,6 +166,8 @@ public class CurrencyConversionPage : ProductPage
+ 	{
+ 		m_selectedQuantity = ClampSelection(m_selectedQuantity + delta);
+ 		UpdateQuantity();
++
++		AccessibilityMgr.Output(m_container, m_selectedQuantity.ToString());
+ 	}
+ 
+ 	private void UpdateConstraints()
+@@ -223,4 +230,48 @@ public class CurrencyConversionPage : ProductPage
+ 	{
+ 		return Math.Max(1, Mathf.Clamp(amount, m_sliderRange.start, m_sliderRange.end));
+ 	}
++
++	#region Accessibility
++	public override void ReadProductPage()
++		{
++	}
++
++	private void ReadConversionPage()
++	{
++		AccessibilityMgr.ShowUI(this);
++		AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.UI_SHOP_CURRENCY_CONVERSION_PAGE_MAX_AMOUNT, m_maxAffordable));
++		AccessibilityMgr.Output(this, GetAccessibleHelp());
++	}
++
++	public override void HandleAccessibleInput()
++	{
++		if (AccessibleKey.GLOBAL_LEFT.IsPressed())
++		{
++			IncrementQuantity(-1);
++		}
++		else if (AccessibleKey.GLOBAL_RIGHT.IsPressed())
++		{
++			IncrementQuantity(1);
++		}
++		else if (AccessibleKey.GLOBAL_BACK.IsPressed())
++		{
++			Close();
++		}
++		else if (AccessibleKey.GLOBAL_CONFIRM.IsPressed())
++		{
++			TryBuy(0);
++		}
++	}
++
++	public override string GetAccessibleHelp()
++	{
++		return AccessibleSpeechUtils.CombineSentences(LocalizationUtils.Get(LocalizationKey.UI_SHOP_CURRENCY_CONVERSION_PAGE_HELP), LocalizedText.GLOBAL_PRESS_ENTER_TO_CONFIRM_OR_BACKSPACE_TO_CANCEL);
++	}
++
++	public override void Close()
++	{
++		AccessibilityMgr.HideUI(this);
++		base.Close();
++		}
++	#endregion
+ }
 diff --git a/Assembly-CSharp/CustomDeckPage.cs b/Assembly-CSharp/CustomDeckPage.cs
 index 89abf5f5..eba61c10 100644
 --- a/Assembly-CSharp/CustomDeckPage.cs
@@ -89328,7 +89550,7 @@ index 599c71fe..f3fef02c 100644
  			bool isValidItem;
  			RewardItemDataModel rewardItemDataModel = RewardFactory.CreateShopRewardItemDataModel(netBundle, item2, out isValidItem);
 diff --git a/Assembly-CSharp/ProductPage.cs b/Assembly-CSharp/ProductPage.cs
-index aeb9add1..f69ac760 100644
+index aeb9add1..935e7d9b 100644
 --- a/Assembly-CSharp/ProductPage.cs
 +++ b/Assembly-CSharp/ProductPage.cs
 @@ -7,6 +7,7 @@ using Blizzard.T5.Services;
@@ -89371,12 +89593,12 @@ index aeb9add1..f69ac760 100644
  
 -	public virtual void Open()
 +	public virtual void Reopen()
-+	{
+ 	{
 +		Open(m_isAccessible);
 +	}
 +
 +	public virtual void Open(bool isAccessible)
- 	{
++	{
 +		m_isAccessible = isAccessible;
 +
  		if (!IsOpen)
@@ -89399,7 +89621,7 @@ index aeb9add1..f69ac760 100644
  			return true;
  		}
  		return false;
-@@ -560,4 +580,265 @@ public class ProductPage : MonoBehaviour
+@@ -560,4 +580,282 @@ public class ProductPage : MonoBehaviour
  			m_openWhenReadyCoroutine = null;
  		}
  	}
@@ -89440,7 +89662,7 @@ index aeb9add1..f69ac760 100644
 +				TryBuy(GetSelectedVariant().Prices.IndexOf(price));
 +			}
 +		}
-+		else if (price.Currency == CurrencyType.ROW_RUNESTONES)
++		else if (price.Currency == CurrencyType.ROW_RUNESTONES || price.Currency == CurrencyType.CN_RUNESTONES)
 +		{
 +			if (!hasEnough)
 +			{
@@ -89451,6 +89673,19 @@ index aeb9add1..f69ac760 100644
 +				TryBuy(GetSelectedVariant().Prices.IndexOf(price));
 +			}
 +		}
++
++		if (price.Currency == CurrencyType.CN_ARCANE_ORBS)
++		{
++			if (!hasEnough)
++			{
++				AccessibilityMgr.Output(m_container, LocalizationUtils.Get(LocalizationKey.UI_SHOP_NOT_ENOUGH_ARCANE_ORBS));
++			}
++			else
++			{
++				TryBuy(GetSelectedVariant().Prices.IndexOf(price));
++			}
++		}
++
 +	}
 +
 +	public virtual void ReadProductPage()
@@ -89581,6 +89816,10 @@ index aeb9add1..f69ac760 100644
 +		{
 +			ReadRemainingGold();
 +			ReadRemainingRunestones();
++			if (ShopUtils.GetVirtualCurrencyMode() == VirtualCurrencyMode.China)
++			{
++				AccessibleShopUtils.ReadRemainingArcaneOrbs(m_container);
++			}
 +		}
 +
 +		if (m_curState == State.READING_VARIANT_MENU)
@@ -94149,7 +94388,7 @@ index 68b720ae..fac8653e 100644
  	public LettuceTeam Team { get; set; }
  
 diff --git a/Assembly-CSharp/Shop.cs b/Assembly-CSharp/Shop.cs
-index ce7fb962..4aad76ed 100644
+index ce7fb962..bcc569e2 100644
 --- a/Assembly-CSharp/Shop.cs
 +++ b/Assembly-CSharp/Shop.cs
 @@ -10,14 +10,15 @@ using Hearthstone.DataModels;
@@ -94370,7 +94609,7 @@ index ce7fb962..4aad76ed 100644
  		return new ShopVisit
  		{
  			Cards = m_browser.GetShopCardTelemetry(),
-@@ -688,4 +699,219 @@ public class Shop : MonoBehaviour, IStore
+@@ -688,4 +699,238 @@ public class Shop : MonoBehaviour, IStore
  			LoadTimeSeconds = 0f
  		};
  	}
@@ -94416,6 +94655,10 @@ index ce7fb962..4aad76ed 100644
 +        m_mainMenu = new AccessibleMenu(this, "", () => Close(true));
 +        m_mainMenu.AddOption(LocalizationUtils.Get(LocalizationKey.UI_SHOP_READ_GOLD), () => AccessibleShopUtils.ReadGold(this));
 +        m_mainMenu.AddOption(LocalizationUtils.Get(LocalizationKey.UI_SHOP_READ_RUNESTONES), () => AccessibleShopUtils.ReadRunestones(this));
++		if (ShopUtils.GetVirtualCurrencyMode() == VirtualCurrencyMode.China)
++		{
++			m_mainMenu.AddOption(LocalizationUtils.Get(LocalizationKey.UI_SHOP_READ_ARCANE_ORBS), () => AccessibleShopUtils.ReadArcaneOrbs(this));
++		}
 +
 +        foreach (var tab in m_shopTabController.m_tabs)
 +        {
@@ -94424,6 +94667,11 @@ index ce7fb962..4aad76ed 100644
 +                m_mainMenu.AddOption(GameStrings.Get(tab.CurrentData.Name), () => TryActivateTab(tab));
 +            }
 +        }
++
++		if (ShopUtils.GetVirtualCurrencyMode() == VirtualCurrencyMode.China)
++		{
++			m_mainMenu.AddOption(GameStrings.Get("GLUE_SHOP_CONVERT_TO_ARCANE_ORBS_HEADER"), OpenArcaneOrbConversionPage);
++		}
 +
 +        ReadMainMenu();
 +    }
@@ -94469,6 +94717,16 @@ index ce7fb962..4aad76ed 100644
 +        clickable.GetPegUIElement().TriggerPress();
 +        clickable.GetPegUIElement().TriggerRelease();
 +    }
++
++	private void OpenArcaneOrbConversionPage()
++	{
++		if (AccessibleShopUtils.GetRunestoneBalance() == 0)
++		{
++			AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.UI_SHOP_NOT_ENOUGH_RUNESTONES));
++			return;
++		}
++		m_productPageController.OpenBoosterCurrencyPurchase();
++	}
 +
 +    private void ReadCurrentTab()
 +	{
@@ -94562,7 +94820,7 @@ index ce7fb962..4aad76ed 100644
 +		}
 +		else
 +		{
-+			m_productMenu.StartReading();
++			m_productMenu?.StartReading();
 +		}
 +	}
 +
@@ -95220,6 +95478,30 @@ index b77cecbf..4e4a1520 100644
  	}
  
  	private bool IsPlayerInGame(BnetGameAccountId gameAccountId)
+diff --git a/Assembly-CSharp/SplashScreen.cs b/Assembly-CSharp/SplashScreen.cs
+index 946fa05b..8201bf7e 100644
+--- a/Assembly-CSharp/SplashScreen.cs
++++ b/Assembly-CSharp/SplashScreen.cs
+@@ -14,6 +14,7 @@ using Hearthstone.Login;
+ using Hearthstone.Startup;
+ using Hearthstone.UI;
+ using UnityEngine;
++using Accessibility;
+ 
+ [CustomEditClass]
+ public class SplashScreen : MonoBehaviour
+@@ -255,6 +256,11 @@ public class SplashScreen : MonoBehaviour
+ 
+ 	private RatingsScreenRegion GetRatingsScreenRegion()
+ 	{
++		if (AccessibilityMgr.IsAccessibilityEnabled())
++		{
++			return RatingsScreenRegion.NONE;
++		}
++
+ 		RatingsScreenRegion ratingsScreenRegion = RatingsScreenRegion.NONE;
+ 		string str = Vars.Key("Debug.ForceRatingScreen").GetStr(string.Empty);
+ 		if (!string.IsNullOrEmpty(str))
 diff --git a/Assembly-CSharp/Store.cs b/Assembly-CSharp/Store.cs
 index 2b1e7b01..65680c7a 100644
 --- a/Assembly-CSharp/Store.cs
