@@ -1,3 +1,9 @@
+### 2024-10-29
+
+- Updated to Hearthstone version 31.0.0.210009
+
+Note that the new pre-release tavern brawl is not currently accessible. Support should be added in the next few days.
+
 ### 2024-10-13
 
 - Players in China are now able to access the in-game shop (contributed by Endefx)
