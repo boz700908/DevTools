@@ -1428,7 +1428,7 @@ index 00000000..bc4b6cd3
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibilityUtils.cs b/Assembly-CSharp/Accessibility/AccessibilityUtils.cs
 new file mode 100644
-index 00000000..9f5bb6a4
+index 00000000..c7551c94
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibilityUtils.cs
 @@ -0,0 +1,498 @@
@@ -1563,7 +1563,7 @@ index 00000000..9f5bb6a4
 +        internal static bool CanPlayTavernBrawl()
 +        {
 +            TavernBrawlMission currentMission = TavernBrawlManager.Get().GetMission(PegasusShared.BrawlType.BRAWL_TYPE_TAVERN_BRAWL);
-+            return currentMission?.brawlMode != PegasusShared.TavernBrawlMode.TB_MODE_HEROIC && !(currentMission?.IsSessionBased ?? true);
++            return currentMission?.brawlMode != PegasusShared.TavernBrawlMode.TB_MODE_HEROIC;
 +        }
 +
 +        public static void PrintStackTrace()
@@ -14514,10 +14514,10 @@ index 00000000..1112ecdf
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleQuest.cs b/Assembly-CSharp/Accessibility/AccessibleQuest.cs
 new file mode 100644
-index 00000000..9f9cb376
+index 00000000..6567652c
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleQuest.cs
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,193 @@
 +﻿using System.Collections.Generic;
 +using Hearthstone.DataModels;
 +
@@ -14561,6 +14561,11 @@ index 00000000..9f9cb376
 +            if (m_questDataModel.Name?.Length > 0) // New quests don't have a name. Instead, they have the XP scroll at the top so we use GetRewards as the name
 +            {
 +                ret.Add(m_questDataModel.Name);
++            }
++
++            if (m_questDataModel.Status == Hearthstone.Progression.QuestManager.QuestStatus.UNKNOWN && !string.IsNullOrEmpty(m_questDataModel.TimeUntilNextQuest))
++            {
++                ret.Add(AccessibleSpeechUtils.CombineSentences(GameStrings.Get("GLUE_QUEST_UPCOMING_HEADER"), m_questDataModel.TimeUntilNextQuest));
 +            }
 +
 +            var rewards = GetRewards();
@@ -22200,10 +22205,10 @@ index 00000000..650a89a8
 +}
 diff --git a/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs b/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs
 new file mode 100644
-index 00000000..40b169dd
+index 00000000..4ad03a5b
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/CollectionManager/AccessibleCollectionManager.cs
-@@ -0,0 +1,2422 @@
+@@ -0,0 +1,2428 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -24498,6 +24503,12 @@ index 00000000..40b169dd
 +                {
 +                    AccessibilityMgr.SetScreen(this);
 +                }
++                else if (m_curMode == Mode.EMBEDDED && SceneMgr.Get().IsInTavernBrawlMode())
++                {
++                    AccessibilityMgr.ShowUI(this);
++                    AccessibilityMgr.SetScreen(TavernBrawlDisplay.Get());
++                }
++
 +                SetupEditDeckMenu();
 +            }
 +        }
@@ -96181,7 +96192,7 @@ index 562272b3..418f4bd5 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/Store.cs b/Assembly-CSharp/Store.cs
-index 2b1e7b01..65680c7a 100644
+index 2b1e7b01..3cc4bc10 100644
 --- a/Assembly-CSharp/Store.cs
 +++ b/Assembly-CSharp/Store.cs
 @@ -9,9 +9,10 @@ using Hearthstone.DataModels;
@@ -96196,16 +96207,7 @@ index 2b1e7b01..65680c7a 100644
  {
  	protected enum BuyButtonState
  	{
-@@ -61,7 +62,7 @@ public abstract class Store : UIBPopup, IStore
- 			{
- 				m_state = value;
- 				Refresh();
--			}
-+		}
- 		}
- 
- 		public bool ForceDisabled
-@@ -147,7 +148,7 @@ public abstract class Store : UIBPopup, IStore
+@@ -147,38 +148,38 @@ public abstract class Store : UIBPopup, IStore
  			m_tooltipZone.HideTooltip();
  		}
  
@@ -96214,18 +96216,77 @@ index 2b1e7b01..65680c7a 100644
  		{
  			switch (state)
  			{
+-			case BuyButtonState.DISABLED_OWNED:
+-				return m_getOwnedTooltipStringHandler();
+-			case BuyButtonState.DISABLED_NOT_ENOUGH_GOLD:
+-				return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_GOLD");
+-			case BuyButtonState.DISABLED_NOT_ENOUGH_VC:
+-			{
+-				if (ShopUtils.TryGetMainVirtualCurrencyType(out var currencyType2) && (currencyType2 == CurrencyType.CN_RUNESTONES || currencyType2 == CurrencyType.ROW_RUNESTONES))
+-				{
+-					return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_RUNESTONES");
+-				}
+-				Log.Store.PrintError($"Cannot get relating button state for Not Enough VC as the currency type {currencyType2} isn't setup (or shouldn't be)");
+-				return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
+-			}
+-			case BuyButtonState.DISABLED_NOT_ENOUGH_BC:
+-			{
+-				if (ShopUtils.TryGetBoosterVirtualCurrencyType(out var currencyType) && currencyType == CurrencyType.CN_ARCANE_ORBS)
+-				{
+-					return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_ARCANE_ORBS");
+-				}
+-				Log.Store.PrintError($"Cannot get relating button state for Not Enough VC as the currency type {currencyType} isn't setup (or shouldn't be)");
+-				return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
+-			}
+-			case BuyButtonState.DISABLED_FEATURE:
+-				return GameStrings.Get("GLUE_STORE_DISABLED");
+-			case BuyButtonState.DISABLED_NO_TOOLTIP:
+-				return string.Empty;
+-			default:
+-				return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
++				case BuyButtonState.DISABLED_OWNED:
++					return m_getOwnedTooltipStringHandler();
++				case BuyButtonState.DISABLED_NOT_ENOUGH_GOLD:
++					return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_GOLD");
++				case BuyButtonState.DISABLED_NOT_ENOUGH_VC:
++					{
++						if (ShopUtils.TryGetMainVirtualCurrencyType(out var currencyType2) && (currencyType2 == CurrencyType.CN_RUNESTONES || currencyType2 == CurrencyType.ROW_RUNESTONES))
++						{
++							return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_RUNESTONES");
++						}
++						Log.Store.PrintError($"Cannot get relating button state for Not Enough VC as the currency type {currencyType2} isn't setup (or shouldn't be)");
++						return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
++					}
++				case BuyButtonState.DISABLED_NOT_ENOUGH_BC:
++					{
++						if (ShopUtils.TryGetBoosterVirtualCurrencyType(out var currencyType) && currencyType == CurrencyType.CN_ARCANE_ORBS)
++						{
++							return GameStrings.Get("GLUE_STORE_FAIL_NOT_ENOUGH_ARCANE_ORBS");
++						}
++						Log.Store.PrintError($"Cannot get relating button state for Not Enough VC as the currency type {currencyType} isn't setup (or shouldn't be)");
++						return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
++					}
++				case BuyButtonState.DISABLED_FEATURE:
++					return GameStrings.Get("GLUE_STORE_DISABLED");
++				case BuyButtonState.DISABLED_NO_TOOLTIP:
++					return string.Empty;
++				default:
++					return GameStrings.Get("GLUE_TOOLTIP_BUTTON_DISABLED_DESC");
+ 			}
+ 		}
+ 	}
 @@ -445,12 +446,12 @@ public abstract class Store : UIBPopup, IStore
  			}
  		}
  		m_useOverlayUI = useOverlayUI;
 -		StartCoroutine(ShowWhenReady(isTotallyFake));
-+		StartCoroutine(ShowWhenReady(isTotallyFake,(ProductDataModel)dataModel));
++		StartCoroutine(ShowWhenReady(isTotallyFake, (ProductDataModel)dataModel));
  	}
  
  	public void Open()
  	{
 -		StartCoroutine(ShowWhenReady(isTotallyFake: false));
-+		StartCoroutine(ShowWhenReady(isTotallyFake:false, new ProductDataModel()));
++		StartCoroutine(ShowWhenReady(isTotallyFake: false, new ProductDataModel()));
  	}
  
  	public bool IsOpen()
@@ -96245,26 +96306,65 @@ index 2b1e7b01..65680c7a 100644
 +
 +		if (!DialogManager.Get().ShowingDialog())
 +		{
-+			ReadStore(dataModel);
++			ReadStore();
 +		}
  	}
  
  	private void ForceDisableBuyButtons(bool forceDisable)
-@@ -813,17 +819,17 @@ public abstract class Store : UIBPopup, IStore
- 	}
- 
- 	private void OnShopProductPageOpened(ProductPage page)
--	{
--		m_restoreWhenShopHides = true;
--		Hide();
--	}
-+		{
-+			m_restoreWhenShopHides = true;
-+			Hide();
-+		}
- 
- 	private void OnShopProductPageClosed(ProductPage page)
- 	{
+@@ -769,29 +775,29 @@ public abstract class Store : UIBPopup, IStore
+ 		{
+ 			switch (currencyType)
+ 			{
+-			case CurrencyType.GOLD:
+-				return BuyButtonState.DISABLED_NOT_ENOUGH_GOLD;
+-			case CurrencyType.CN_RUNESTONES:
+-			case CurrencyType.ROW_RUNESTONES:
+-			{
+-				ProductDataModel virtualCurrencyProductItem = service.VirtualCurrencyProductItem;
+-				if (virtualCurrencyProductItem != null && virtualCurrencyProductItem.Availability == ProductAvailability.CAN_PURCHASE)
+-				{
+-					return BuyButtonState.ENABLED;
+-				}
+-				return BuyButtonState.DISABLED_NOT_ENOUGH_VC;
+-			}
+-			case CurrencyType.CN_ARCANE_ORBS:
+-			{
+-				ProductDataModel boosterCurrencyProductItem = service.BoosterCurrencyProductItem;
+-				if (boosterCurrencyProductItem != null && boosterCurrencyProductItem.Availability == ProductAvailability.CAN_PURCHASE)
+-				{
+-					return BuyButtonState.ENABLED;
+-				}
+-				return BuyButtonState.DISABLED_NOT_ENOUGH_BC;
+-			}
+-			default:
+-				return BuyButtonState.DISABLED;
++				case CurrencyType.GOLD:
++					return BuyButtonState.DISABLED_NOT_ENOUGH_GOLD;
++				case CurrencyType.CN_RUNESTONES:
++				case CurrencyType.ROW_RUNESTONES:
++					{
++						ProductDataModel virtualCurrencyProductItem = service.VirtualCurrencyProductItem;
++						if (virtualCurrencyProductItem != null && virtualCurrencyProductItem.Availability == ProductAvailability.CAN_PURCHASE)
++						{
++							return BuyButtonState.ENABLED;
++						}
++						return BuyButtonState.DISABLED_NOT_ENOUGH_VC;
++					}
++				case CurrencyType.CN_ARCANE_ORBS:
++					{
++						ProductDataModel boosterCurrencyProductItem = service.BoosterCurrencyProductItem;
++						if (boosterCurrencyProductItem != null && boosterCurrencyProductItem.Availability == ProductAvailability.CAN_PURCHASE)
++						{
++							return BuyButtonState.ENABLED;
++						}
++						return BuyButtonState.DISABLED_NOT_ENOUGH_BC;
++					}
++				default:
++					return BuyButtonState.DISABLED;
+ 			}
+ 		}
+ 		return BuyButtonState.ENABLED;
+@@ -823,7 +829,7 @@ public abstract class Store : UIBPopup, IStore
  		if (this != null && m_restoreWhenShopHides)
  		{
  			m_restoreWhenShopHides = false;
@@ -96273,51 +96373,80 @@ index 2b1e7b01..65680c7a 100644
  		}
  	}
  
-@@ -836,4 +842,50 @@ public abstract class Store : UIBPopup, IStore
+@@ -836,4 +842,79 @@ public abstract class Store : UIBPopup, IStore
  		}
  		return hashSet;
  	}
 +
 +	#region accessibility
-+	private AccessibleMenu m_accessibleMenu;
-+	public void ReadStore(ProductDataModel dataMode) {
-+		AccessibilityMgr.ShowUI(this);
-+		WidgetTemplate componentOnSelfOrParent = GameObjectUtils.GetComponentOnSelfOrParent<WidgetTemplate>(base.transform);
-+		ProductDataModel dataModel=componentOnSelfOrParent.GetDataModel<ProductDataModel>();
-+		if(dataModel!=null) {
-+			AccessibilityMgr.Output(null,dataModel.DescriptionHeader);
-+		AccessibilityMgr.Output(null,dataModel.FlavorText);
++
++	protected enum AccessibleState
++	{
++		VIEWING_BUTTONS,
++		INTRO // Tavern brawl store
 +	}
-+		m_accessibleMenu=new AccessibleMenu(null,"", () => Navigation.GoBack());
-+		foreach (BuyButtonInternal buyButton in m_buyButtons) {
-+			if(buyButton.State!=BuyButtonState.ENABLED) {
-+continue;
++
++	protected AccessibleState m_curState;
++
++	private AccessibleMenu m_accessibleMenu;
++
++	public virtual void ReadStore()
++	{
++		AccessibilityMgr.ShowUI(this);
++		SetupAccessibleButtons();
++	}
++
++	protected void SetupAccessibleButtons()
++	{
++		WidgetTemplate componentOnSelfOrParent = GameObjectUtils.GetComponentOnSelfOrParent<WidgetTemplate>(base.transform);
++		ProductDataModel dataModel = componentOnSelfOrParent.GetDataModel<ProductDataModel>();
++		if (dataModel != null)
++		{
++			AccessibilityMgr.Output(this, dataModel.DescriptionHeader);
++			AccessibilityMgr.Output(this, dataModel.FlavorText);
++		}
++		m_accessibleMenu = new AccessibleMenu(this, "", () => Navigation.GoBack());
++		foreach (BuyButtonInternal buyButton in m_buyButtons)
++		{
++			if (buyButton.State != BuyButtonState.ENABLED)
++			{
++				continue;
 +			}
-+			 m_accessibleMenu.AddOption(GameStrings.Get(buyButton.m_toolTipHeadlineStringId)+" "+buyButton.m_button.m_ButtonText.Text,() => ClickBuyButton(buyButton));
++			m_accessibleMenu.AddOption(GameStrings.Get(buyButton.m_toolTipHeadlineStringId) + " " + buyButton.m_button.m_ButtonText.Text, () => ClickBuyButton(buyButton));
 +		}
 +		m_accessibleMenu.StartReading();
++		m_curState = AccessibleState.VIEWING_BUTTONS;
 +	}
 +
-+	private void ClickBuyButton(BuyButtonInternal btn) {
-+			if(btn.State!=BuyButtonState.ENABLED) {
-+				AccessibilityMgr.Output(this,btn.GetBuyButtonTooltipMessage(btn.State));
-+				return;
-+			}
-+			btn.m_button.TriggerRelease();
-+	}
-+	public void HandleAccessibleInput() {
-+		m_accessibleMenu?.HandleAccessibleInput();
-+	}
-+
-+	public string GetAccessibleHelp() {
-+		return m_accessibleMenu.GetHelp();
-+
++	private void ClickBuyButton(BuyButtonInternal btn)
++	{
++		if (btn.State != BuyButtonState.ENABLED)
++		{
++			AccessibilityMgr.Output(this, btn.GetBuyButtonTooltipMessage(btn.State));
++			return;
++		}
++		btn.m_button.TriggerRelease();
 +	}
 +
-+	public void OnGainedFocus() {
-+
++	public virtual void HandleAccessibleInput()
++	{
++		if (m_curState == AccessibleState.VIEWING_BUTTONS)
++		{
++			m_accessibleMenu?.HandleAccessibleInput();
++		}
 +	}
-+	public override void Hide() {
++
++	public virtual string GetAccessibleHelp()
++	{
++		if (m_curState == AccessibleState.VIEWING_BUTTONS)
++		{
++			return m_accessibleMenu.GetHelp();
++		}
++		return "";
++	}
++
++	public override void Hide()
++	{
 +		base.Hide();
 +		AccessibilityMgr.HideUI(this);
 +	}
@@ -97510,7 +97639,7 @@ index 20f0b125..3f25ce00 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/TavernBrawlDisplay.cs b/Assembly-CSharp/TavernBrawlDisplay.cs
-index 9ee3675e..08f0a118 100644
+index 9ee3675e..587bc554 100644
 --- a/Assembly-CSharp/TavernBrawlDisplay.cs
 +++ b/Assembly-CSharp/TavernBrawlDisplay.cs
 @@ -7,9 +7,10 @@ using Blizzard.T5.MaterialService.Extensions;
@@ -97543,7 +97672,21 @@ index 9ee3675e..08f0a118 100644
  		{
  			m_firstTimeIntroductionPopupShowing = true;
  			StartCoroutine(DoFirstTimeHeroicIntro());
-@@ -458,9 +461,9 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -318,9 +321,13 @@ public class TavernBrawlDisplay : MonoBehaviour
+ 			switch (playerStatus)
+ 			{
+ 			case TavernBrawlStatus.TB_STATUS_TICKET_REQUIRED:
++			m_isTransitioning = true;
++
+ 				StartCoroutine(ShowPurchaseScreen());
+ 				return;
+ 			case TavernBrawlStatus.TB_STATUS_IN_REWARDS:
++				m_isTransitioning = true;
++
+ 				StartCoroutine(ShowRewardsScreen());
+ 				return;
+ 			default:
+@@ -458,9 +465,9 @@ public class TavernBrawlDisplay : MonoBehaviour
  			if (TavernBrawlManager.Get().HasValidDeckForCurrent())
  			{
  				if (TavernBrawlManager.Get().PlayerStatus == TavernBrawlStatus.TB_STATUS_ACTIVE && m_playButton != null)
@@ -97556,7 +97699,7 @@ index 9ee3675e..08f0a118 100644
  				if (m_editDeckHighlight != null)
  				{
  					m_editDeckHighlight.ChangeState(ActorStateType.HIGHLIGHT_OFF);
-@@ -701,20 +704,20 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -701,20 +708,20 @@ public class TavernBrawlDisplay : MonoBehaviour
  			{
  				AssetReference assetReference = new AssetReference(record.ScriptObject);
  				using AssetHandle<ScenarioData> assetHandle = AssetLoader.Get().LoadAsset<ScenarioData>(assetReference);
@@ -97590,7 +97733,7 @@ index 9ee3675e..08f0a118 100644
  			if (string.IsNullOrEmpty(text))
  			{
  				text = record.TbTexture;
-@@ -753,17 +756,17 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -753,17 +760,17 @@ public class TavernBrawlDisplay : MonoBehaviour
  	{
  		if (!DemoMgr.Get().IsExpoDemo())
  		{
@@ -97617,7 +97760,7 @@ index 9ee3675e..08f0a118 100644
  
  	private void UpdateRecordUI()
  	{
-@@ -866,7 +869,7 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -866,7 +873,7 @@ public class TavernBrawlDisplay : MonoBehaviour
  		{
  			return;
  		}
@@ -97626,7 +97769,22 @@ index 9ee3675e..08f0a118 100644
  		int latestSeenTavernBrawlChalkboard = TavernBrawlManager.Get().LatestSeenTavernBrawlChalkboard;
  		if (latestSeenTavernBrawlChalkboard == 0)
  		{
-@@ -1067,8 +1070,8 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -945,10 +952,14 @@ public class TavernBrawlDisplay : MonoBehaviour
+ 		{
+ 			return;
+ 		}
++
+ 		m_currentlyShowingMode = TavernBrawlStatus.TB_STATUS_ACTIVE;
+ 		Start_ShowAttentionGrabbers();
+ 		UpdateChalkboardVisual(animDelay);
+ 		UpdateDeckUI(animate: false);
++
++		m_isTransitioning = false;
++		ReadScreen();
+ 		if (!m_currentMission.IsDungeonRun)
+ 		{
+ 			return;
+@@ -1067,8 +1078,8 @@ public class TavernBrawlDisplay : MonoBehaviour
  		}
  		EnableBackButton(enable: false);
  		StoreManager.Get().HideStore(ShopType.TAVERN_BRAWL_STORE);
@@ -97637,7 +97795,7 @@ index 9ee3675e..08f0a118 100644
  
  	private void UpdateDeckUI(bool animate)
  	{
-@@ -1275,6 +1278,8 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1275,6 +1286,8 @@ public class TavernBrawlDisplay : MonoBehaviour
  
  	private void CreateDeck()
  	{
@@ -97646,7 +97804,7 @@ index 9ee3675e..08f0a118 100644
  		PresenceMgr.Get().SetStatus(Global.PresenceStatus.TAVERN_BRAWL_DECKEDITOR);
  		CollectionManagerDisplay collectionManagerDisplay = CollectionManager.Get().GetCollectibleDisplay() as CollectionManagerDisplay;
  		if (collectionManagerDisplay != null)
-@@ -1483,20 +1488,20 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1483,20 +1496,20 @@ public class TavernBrawlDisplay : MonoBehaviour
  			{
  				num = ((HeroPickerDisplay.Get() != null) ? 1 : 0);
  				if (num == 0)
@@ -97679,7 +97837,7 @@ index 9ee3675e..08f0a118 100644
  			}
  			else
  			{
-@@ -1604,6 +1609,8 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1604,6 +1617,8 @@ public class TavernBrawlDisplay : MonoBehaviour
  	{
  		if (response != AlertPopup.Response.CANCEL)
  		{
@@ -97688,7 +97846,7 @@ index 9ee3675e..08f0a118 100644
  			CollectionDeckTray.Get().DeleteEditingDeck();
  			CollectionManagerDisplay collectionManagerDisplay = CollectionManager.Get().GetCollectibleDisplay() as CollectionManagerDisplay;
  			if (collectionManagerDisplay != null)
-@@ -1611,6 +1618,10 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1611,6 +1626,10 @@ public class TavernBrawlDisplay : MonoBehaviour
  				collectionManagerDisplay.OnDoneEditingDeck();
  			}
  		}
@@ -97699,7 +97857,7 @@ index 9ee3675e..08f0a118 100644
  	}
  
  	private void OnDeckCreated(long deckID, string name)
-@@ -1619,6 +1630,8 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1619,6 +1638,8 @@ public class TavernBrawlDisplay : MonoBehaviour
  		if (collectionDeck != null && deckID == collectionDeck.ID)
  		{
  			SwitchToEditDeckMode(collectionDeck, isNewDeck: true);
@@ -97708,7 +97866,7 @@ index 9ee3675e..08f0a118 100644
  		}
  	}
  
-@@ -1940,4 +1953,83 @@ public class TavernBrawlDisplay : MonoBehaviour
+@@ -1940,4 +1961,90 @@ public class TavernBrawlDisplay : MonoBehaviour
  	{
  		m_chalkboardFX.SetActive(value: false);
  	}
@@ -97750,6 +97908,13 @@ index 9ee3675e..08f0a118 100644
 +			m_mainMenu.AddOption(m_editDeckButton.GetText(), m_editDeckButton.TriggerRelease);
 +		}
 +
++		if (m_currentMission.IsSessionBased)
++		{
++			int wins = TavernBrawlManager.Get().GamesWon;
++			int losses = TavernBrawlManager.Get().GamesLost;
++			AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.ARENA_WINS_LOSSES, wins, losses));
++		}
++
 +		m_mainMenu.StartReading();
 +		m_curState = State.MAIN_MENU;
 +	}
@@ -97765,7 +97930,7 @@ index 9ee3675e..08f0a118 100644
 +		switch (m_curState)
 +		{
 +			case State.MAIN_MENU:
-+			m_mainMenu.HandleAccessibleInput();
++			m_mainMenu?.HandleAccessibleInput();
 +			break;
 +			case State.READING_DESCRIPTION:
 +			if (AccessibleKey.BACK.IsPressed())
@@ -97774,7 +97939,7 @@ index 9ee3675e..08f0a118 100644
 +			}
 +			else
 +			{
-+				m_accessibleDescription.HandleAccessibleInput();
++				m_accessibleDescription?.HandleAccessibleInput();
 +			}
 +			break;
 +		}
@@ -97791,6 +97956,93 @@ index 9ee3675e..08f0a118 100644
 +		ReadScreen();
 +	}
 +	#endregion
+ }
+diff --git a/Assembly-CSharp/TavernBrawlStore.cs b/Assembly-CSharp/TavernBrawlStore.cs
+index aea3d90a..352ddbdc 100644
+--- a/Assembly-CSharp/TavernBrawlStore.cs
++++ b/Assembly-CSharp/TavernBrawlStore.cs
+@@ -9,6 +9,7 @@ using Hearthstone.UI;
+ using PegasusShared;
+ using PegasusUtil;
+ using UnityEngine;
++using Accessibility;
+ 
+ public class TavernBrawlStore : Store
+ {
+@@ -209,6 +210,10 @@ public class TavernBrawlStore : Store
+ 			{
+ 				TavernBrawlManager.Get().RequestSessionBegin();
+ 			}
++			else
++			{
++				SetupAccessibleButtons();
++			}
+ 		}
+ 	}
+ 
+@@ -320,6 +325,8 @@ public class TavernBrawlStore : Store
+ 				EndConditionDesc = mission.tavernBrawlSpec.EndConditionDesc
+ 			};
+ 			componentOnSelfOrParent.BindDataModel(dataModel);
++
++			m_brawlDataModel = dataModel;
+ 		}
+ 	}
+ 
+@@ -437,4 +444,54 @@ public class TavernBrawlStore : Store
+ 		Debug.LogWarning("TavernBrawlStore.SetUpBuyWithMoneyButton(): m_bundle is null");
+ 		SetMoneyButtonState(BuyButtonState.DISABLED);
+ 	}
++
++	#region Accessibility
++
++	private AccessibleMultilineText m_brawlInfo;
++
++	private TavernBrawlDetailsDataModel m_brawlDataModel;
++
++	public override void ReadStore()
++	{
++		AccessibilityMgr.ShowUI(this);
++		m_curState = AccessibleState.INTRO;
++		m_brawlInfo = new AccessibleMultilineText(this, m_ChalkboardTitleText.Text, m_ChalkboardDescriptionText.Text, GameStrings.Get(m_brawlDataModel.RewardDesc), m_EndsInTextChalk.Text);
++		if (m_brawlDataModel.PopupType == TavernBrawlPopupType.POPUP_TYPE_PRERELEASE)
++		{
++			m_brawlInfo.AddLine(GameStrings.Get("GLUE_TAVERN_BRAWL_PRERELEASE_REWARDS_ENTRANCE_FEE"));
++		}
++		m_brawlInfo.ReadAllLines();
++		AccessibilityMgr.Output(this, GetAccessibleHelp());
++	}
++
++	public override void HandleAccessibleInput()
++	{
++		if (m_curState == AccessibleState.INTRO)
++		{
++			if (AccessibleKey.CONFIRM.IsPressed())
++			{
++				m_ContinueButton.TriggerRelease();
++			}
++			else if (AccessibleKey.BACK.IsPressed())
++			{
++				Navigation.GoBack();
++			}
++
++			m_brawlInfo?.HandleAccessibleInput();
++		}
++		else
++		{
++			base.HandleAccessibleInput();
++		}
++	}
++
++    public override string GetAccessibleHelp()
++    {
++		if (m_curState == AccessibleState.INTRO)
++		{
++			return LocalizationUtils.Format(LocalizationKey.PRESS_KEY_TO_START, AccessibleKey.CONFIRM);
++		}
++        return base.GetAccessibleHelp();
++    }
++    #endregion
  }
 diff --git a/Assembly-CSharp/TavernGuideInnerTray.cs b/Assembly-CSharp/TavernGuideInnerTray.cs
 index 386c7cd5..9c9a4e57 100644

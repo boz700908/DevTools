@@ -1,6 +1,11 @@
+### 2024-10-31
+
+- Added support for the Great Dark Beyond pre-release tavern brawl (contributed by Endefx)
+- Event weekly quests that are not yet active will now be properly read as such (contributed by Endefx)
+
 ### 2024-10-29
 
-- Updated to Hearthstone version 31.0.0.210009
+- Updated to Hearthstone version 31.0.0.210009 (contributed by Endefx)
 
 Note that the new pre-release tavern brawl is not currently accessible. Support should be added in the next few days.
 
