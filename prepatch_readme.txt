@@ -172,6 +172,10 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-11-04
+
+- Updated to Hearthstone version 31.0.0.210640
+
 ### 2024-10-31
 
 - Added support for the Great Dark Beyond pre-release tavern brawl (contributed by Endefx)

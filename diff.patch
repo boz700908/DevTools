@@ -39937,7 +39937,7 @@ index 6048edbe..9c505000 100644
  	private List<GameObject> m_horizontalDividers = new List<GameObject>();
  
 diff --git a/Assembly-CSharp/Card.cs b/Assembly-CSharp/Card.cs
-index 50f8c147..d3418fec 100644
+index 8748296a..cafa314a 100644
 --- a/Assembly-CSharp/Card.cs
 +++ b/Assembly-CSharp/Card.cs
 @@ -12,6 +12,7 @@ using Hearthstone.Progression;
@@ -39987,7 +39987,26 @@ index 50f8c147..d3418fec 100644
  
  	public void UpdateProposedManaUsage()
  	{
-@@ -2011,14 +2012,14 @@ public class Card : MonoBehaviour
+@@ -1781,13 +1782,13 @@ public class Card : MonoBehaviour
+ 		if (suboption >= m_subOptionEffects.Count)
+ 		{
+ 			if (m_entity != null)
++		{
++			Entity subCard = m_entity.GetSubCard(suboption);
++			if (subCard != null)
+ 			{
+-				Entity subCard = m_entity.GetSubCard(suboption);
+-				if (subCard != null)
+-				{
+-					return subCard.GetCard().m_playEffect;
+-				}
++				return subCard.GetCard().m_playEffect;
+ 			}
++		}
+ 			return null;
+ 		}
+ 		return m_subOptionEffects[suboption];
+@@ -2015,14 +2016,14 @@ public class Card : MonoBehaviour
  	}
  
  	private EmoteEntry GetEmoteEntryExact(EmoteType emoteType)
@@ -40009,7 +40028,7 @@ index 50f8c147..d3418fec 100644
  		return null;
  	}
  
-@@ -2171,8 +2172,8 @@ public class Card : MonoBehaviour
+@@ -2175,8 +2176,8 @@ public class Card : MonoBehaviour
  	{
  		if (!m_suppressDeathEffects && !IsHeroUsingDeathSpellOverride())
  		{
@@ -40020,7 +40039,7 @@ index 50f8c147..d3418fec 100644
  				ForceActivateDeathSoundSpells();
  			}
  			m_suppressDeathSounds = false;
-@@ -2182,15 +2183,15 @@ public class Card : MonoBehaviour
+@@ -2186,15 +2187,15 @@ public class Card : MonoBehaviour
  
  	public void ForceActivateDeathSoundSpells()
  	{
@@ -40044,7 +40063,7 @@ index 50f8c147..d3418fec 100644
  
  	private bool IsHeroUsingDeathSpellOverride()
  	{
-@@ -2308,10 +2309,10 @@ public class Card : MonoBehaviour
+@@ -2312,10 +2313,10 @@ public class Card : MonoBehaviour
  		if (gameState != null)
  		{
  			gameEntity = gameState.GetGameEntity();
@@ -40059,7 +40078,7 @@ index 50f8c147..d3418fec 100644
  		}
  		if (gameEntity != null && gameEntity.GetGameOptions().GetBooleanOption(GameEntityOption.DELAY_CARD_SOUND_SPELLS))
  		{
-@@ -2458,10 +2459,10 @@ public class Card : MonoBehaviour
+@@ -2462,10 +2463,10 @@ public class Card : MonoBehaviour
  					if (delaySec > 0f)
  					{
  						yield return new WaitForSeconds(delaySec);
@@ -40072,7 +40091,7 @@ index 50f8c147..d3418fec 100644
  					AudioSource activeAudioSource = emoteSoundSpell.GetActiveAudioSource();
  					if ((bool)activeAudioSource && (bool)activeAudioSource.clip && waitTime < activeAudioSource.clip.length)
  					{
-@@ -2743,11 +2744,11 @@ public class Card : MonoBehaviour
+@@ -2747,11 +2748,11 @@ public class Card : MonoBehaviour
  	{
  		SpellManager spellManager = SpellManager.Get();
  		if (asset != null && spellManager != null && asset is Spell spell)
@@ -40087,7 +40106,7 @@ index 50f8c147..d3418fec 100644
  
  	private void DestroyEmoteList()
  	{
-@@ -2974,7 +2975,7 @@ public class Card : MonoBehaviour
+@@ -2978,7 +2979,7 @@ public class Card : MonoBehaviour
  			}
  			if (m_actor != null)
  			{
@@ -40096,7 +40115,7 @@ index 50f8c147..d3418fec 100644
  			}
  			break;
  		case GAME_TAG.LETTUCE_IS_COMBAT_ACTION_TAKEN:
-@@ -3019,7 +3020,7 @@ public class Card : MonoBehaviour
+@@ -3023,7 +3024,7 @@ public class Card : MonoBehaviour
  			if (m_entity != null && (m_entity.IsControlledByOpposingSidePlayer() || (GameMgr.Get() != null && GameMgr.Get().IsSpectator())))
  			{
  				StartCoroutine(WaitAndForgeCard());
@@ -40105,7 +40124,7 @@ index 50f8c147..d3418fec 100644
  			break;
  		case GAME_TAG.EXHAUSTED:
  			if (m_actor != null)
-@@ -3566,16 +3567,16 @@ public class Card : MonoBehaviour
+@@ -3576,16 +3577,16 @@ public class Card : MonoBehaviour
  		while (true)
  		{
  			if (m_actor == null || m_actor.gameObject == null)
@@ -40129,7 +40148,7 @@ index 50f8c147..d3418fec 100644
  				break;
  			}
  			yield return null;
-@@ -3605,16 +3606,16 @@ public class Card : MonoBehaviour
+@@ -3615,16 +3616,16 @@ public class Card : MonoBehaviour
  			}
  			if (flag)
  			{
@@ -40149,7 +40168,7 @@ index 50f8c147..d3418fec 100644
  		}
  		Spell playSpell;
  		while (true)
-@@ -3624,8 +3625,8 @@ public class Card : MonoBehaviour
+@@ -3634,8 +3635,8 @@ public class Card : MonoBehaviour
  			{
  				break;
  			}
@@ -40160,7 +40179,7 @@ index 50f8c147..d3418fec 100644
  		SetInputEnabled(enabled: true);
  		if (exhausted && (GameState.Get()?.IsValidOption(m_entity) ?? false) && !m_entity.HasSubCards() && playSpell != null)
  		{
-@@ -3675,7 +3676,7 @@ public class Card : MonoBehaviour
+@@ -3685,7 +3686,7 @@ public class Card : MonoBehaviour
  		}
  		if (m_actor.GetComponent<Animation>() != null)
  		{
@@ -40169,7 +40188,7 @@ index 50f8c147..d3418fec 100644
  		}
  		Spell spell = GetPlaySpell(0);
  		if (spell != null)
-@@ -4141,7 +4142,7 @@ public class Card : MonoBehaviour
+@@ -4151,7 +4152,7 @@ public class Card : MonoBehaviour
  			{
  				if (fallbackToDefault)
  				{
@@ -40178,7 +40197,7 @@ index 50f8c147..d3418fec 100644
  				}
  				return;
  			}
-@@ -4202,13 +4203,13 @@ public class Card : MonoBehaviour
+@@ -4212,13 +4213,13 @@ public class Card : MonoBehaviour
  		if (m_zone is ZoneHand)
  		{
  			if (m_entity.HasTag(GAME_TAG.GHOSTLY))
@@ -40196,7 +40215,7 @@ index 50f8c147..d3418fec 100644
  		}
  		else if ((m_entity.IsWeapon() && (m_zone is ZoneWeapon || m_zone is ZoneHeroPower)) || (m_entity.IsBattlegroundHeroBuddy() && m_zone is ZoneBattlegroundHeroBuddy) || (m_entity.IsBattlegroundQuestReward() && m_zone is ZoneBattlegroundQuestReward) || (m_entity.IsBattlegroundTrinket() && m_zone is ZoneBattlegroundTrinket))
  		{
-@@ -4625,19 +4626,19 @@ public class Card : MonoBehaviour
+@@ -4635,19 +4636,19 @@ public class Card : MonoBehaviour
  			else if (m_entity.IsPassable())
  			{
  				ShowPassableHover();
@@ -40224,7 +40243,7 @@ index 50f8c147..d3418fec 100644
  			else if (m_entity.IsPassable())
  			{
  				HidePassableHover();
-@@ -4746,17 +4747,17 @@ public class Card : MonoBehaviour
+@@ -4756,17 +4757,17 @@ public class Card : MonoBehaviour
  			m_actor.SetDeckActionHighlightState(DeckActionHighlightState.None);
  		}
  		else if (!m_overPlayfield)
@@ -40247,7 +40266,7 @@ index 50f8c147..d3418fec 100644
  			m_actor.SetDeckActionHighlightState(DeckActionHighlightState.None);
  		}
  		if (m_entity.HasTag(GAME_TAG.FORCE_GREEN_GLOW_ACTIVE) && m_entity.IsControlledByFriendlySidePlayer())
-@@ -4833,11 +4834,11 @@ public class Card : MonoBehaviour
+@@ -4843,11 +4844,11 @@ public class Card : MonoBehaviour
  		if (!flag4)
  		{
  			if (m_mousedOver)
@@ -40263,7 +40282,7 @@ index 50f8c147..d3418fec 100644
  				else if (m_entity.GetRealTimeTitanAbilityUsable())
  				{
  					m_actor.SetActorState(ActorStateType.CARD_TITAN_ABILITY_MOUSE_OVER);
-@@ -4846,19 +4847,19 @@ public class Card : MonoBehaviour
+@@ -4856,19 +4857,19 @@ public class Card : MonoBehaviour
  				{
  					m_actor.SetActorState(ActorStateType.CARD_TITAN_ABILITY_MOUSE_OVER);
  				}
@@ -40292,7 +40311,7 @@ index 50f8c147..d3418fec 100644
  				if (m_entity.GetRealTimeTitanAbilityUsable())
  				{
  					m_actor.SetActorState(ActorStateType.CARD_TITAN_ABILITY);
-@@ -5601,11 +5602,11 @@ public class Card : MonoBehaviour
+@@ -5611,11 +5612,11 @@ public class Card : MonoBehaviour
  		if (!m_alwaysShowCardsInTooltip)
  		{
  			if (m_zone is ZoneHand)
@@ -40308,7 +40327,7 @@ index 50f8c147..d3418fec 100644
  		return true;
  	}
  
-@@ -5831,8 +5832,8 @@ public class Card : MonoBehaviour
+@@ -5841,8 +5842,8 @@ public class Card : MonoBehaviour
  			if (string.IsNullOrEmpty(text))
  			{
  				Debug.LogWarning("[UpdateRewardActor] - rewardEnt is null and no backup QUEST_REWARD_DBID");
@@ -40319,7 +40338,7 @@ index 50f8c147..d3418fec 100644
  		}
  		if (entity == null)
  		{
-@@ -5970,10 +5971,10 @@ public class Card : MonoBehaviour
+@@ -5980,10 +5981,10 @@ public class Card : MonoBehaviour
  				m_actor.Hide();
  				if (!GameMgr.Get().IsBattlegrounds() || m_entity == null || m_entity.GetRealTimeZone() == TAG_ZONE.HAND)
  				{
@@ -40332,7 +40351,7 @@ index 50f8c147..d3418fec 100644
  		else if ((m_prevZone is ZoneGraveyard || m_prevZone is ZoneDeck) && m_zone.m_ServerTag == TAG_ZONE.PLAY)
  		{
  			ShowCard();
-@@ -6758,9 +6759,9 @@ public class Card : MonoBehaviour
+@@ -6768,9 +6769,9 @@ public class Card : MonoBehaviour
  					if (entity != null && entity.IsMinion())
  					{
  						if (entity.HasTag(GAME_TAG.MINIATURIZE) && !m_entity.HasTag(GAME_TAG.CREATED_BY_MINIATURIZE))
@@ -40345,7 +40364,7 @@ index 50f8c147..d3418fec 100644
  						if (entity.HasTag(GAME_TAG.GIGANTIFY) && !m_entity.HasTag(GAME_TAG.CREATED_BY_GIGANTIFY))
  						{
  							flag6 = false;
-@@ -6797,7 +6798,7 @@ public class Card : MonoBehaviour
+@@ -6807,7 +6808,7 @@ public class Card : MonoBehaviour
  					}
  					if (m_entity.HasTag(GAME_TAG.LINKED_ENTITY))
  					{
@@ -40354,7 +40373,7 @@ index 50f8c147..d3418fec 100644
  						{
  							ActivateMinionSpawnEffects();
  						}
-@@ -6869,23 +6870,23 @@ public class Card : MonoBehaviour
+@@ -6879,23 +6880,23 @@ public class Card : MonoBehaviour
  		}
  		else if (m_prevZone is ZoneHand && (m_zone is ZonePlay || m_zone is ZoneHero))
  		{
@@ -40394,7 +40413,7 @@ index 50f8c147..d3418fec 100644
  		else if (m_prevZone is ZoneHand && m_zone is ZoneWeapon)
  		{
  			if (ActivateActorSpells_HandToWeapon(oldActor))
-@@ -7132,10 +7133,10 @@ public class Card : MonoBehaviour
+@@ -7142,10 +7143,10 @@ public class Card : MonoBehaviour
  			if (m_prevZone != null && m_prevZone.m_Side != m_zone.m_Side)
  			{
  				if (m_prevZone is ZoneSecret && m_zone is ZoneSecret)
@@ -40409,7 +40428,7 @@ index 50f8c147..d3418fec 100644
  				else if (m_prevZone is ZonePlay && m_zone is ZonePlay)
  				{
  					ActivateStateSpells();
-@@ -7166,8 +7167,8 @@ public class Card : MonoBehaviour
+@@ -7176,8 +7177,8 @@ public class Card : MonoBehaviour
  			ShowSecretQuestBirth();
  			flag = true;
  			m_actorReady = true;
@@ -40420,7 +40439,7 @@ index 50f8c147..d3418fec 100644
  		if (!flag)
  		{
  			if ((bool)oldActor)
-@@ -7364,36 +7365,36 @@ public class Card : MonoBehaviour
+@@ -7374,36 +7375,36 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40487,7 +40506,7 @@ index 50f8c147..d3418fec 100644
  		}
  		srcDeck.UpdateLayout();
  		PowerTask cardDrawBlockingTask = GetPowerTaskToBlockCardDraw();
-@@ -7407,10 +7408,10 @@ public class Card : MonoBehaviour
+@@ -7417,10 +7418,10 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40502,7 +40521,7 @@ index 50f8c147..d3418fec 100644
  		}
  		m_actorReady = true;
  		if (ShouldCardDrawWaitForTurnStartSpells())
-@@ -7502,6 +7503,7 @@ public class Card : MonoBehaviour
+@@ -7512,6 +7513,7 @@ public class Card : MonoBehaviour
  	private IEnumerator DrawUnknownOpponentCard(ZoneHand handZone, ZoneDeck srcDeck)
  	{
  		SoundManager.Get().LoadAndPlay("draw_card_and_add_to_hand_opp_1.prefab:5a05fbb2c5833a94182e1b454647d5c8", base.gameObject);
@@ -40510,7 +40529,7 @@ index 50f8c147..d3418fec 100644
  		base.gameObject.transform.rotation = IN_DECK_HIDDEN_ROTATION;
  		DetermineIfOverrideDrawTimeScale();
  		bool hasDrawOverride = GetController() != null && GetController().HasTag(GAME_TAG.DRAW_SPELL_OVERRIDE);
-@@ -7547,36 +7549,36 @@ public class Card : MonoBehaviour
+@@ -7557,36 +7559,36 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40577,7 +40596,7 @@ index 50f8c147..d3418fec 100644
  		}
  		srcDeck.UpdateLayout();
  		yield return new WaitForSeconds(0.2f);
-@@ -7593,10 +7595,10 @@ public class Card : MonoBehaviour
+@@ -7603,10 +7605,10 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40592,7 +40611,7 @@ index 50f8c147..d3418fec 100644
  		}
  		m_doNotSort = false;
  		m_beingDrawnByOpponent = false;
-@@ -7650,6 +7652,7 @@ public class Card : MonoBehaviour
+@@ -7660,6 +7662,7 @@ public class Card : MonoBehaviour
  	private IEnumerator RevealDrawnOpponentCard(string handActorPath, Actor handActor, ZoneHand handZone, ZoneDeck srcDeck)
  	{
  		SoundManager.Get().LoadAndPlay("draw_card_1.prefab:19dd221ebfed9754e85ef1f104e0fddb", base.gameObject);
@@ -40600,7 +40619,7 @@ index 50f8c147..d3418fec 100644
  		handActor.transform.parent = m_actor.transform.parent;
  		TransformUtil.CopyLocal(handActor, m_actor);
  		m_actor.Hide();
-@@ -7697,36 +7700,36 @@ public class Card : MonoBehaviour
+@@ -7707,36 +7710,36 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40667,7 +40686,7 @@ index 50f8c147..d3418fec 100644
  		}
  		srcDeck.UpdateLayout();
  		yield return new WaitForSeconds(1.75f);
-@@ -8022,29 +8025,29 @@ public class Card : MonoBehaviour
+@@ -8032,29 +8035,29 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40720,7 +40739,7 @@ index 50f8c147..d3418fec 100644
  		}
  		if (num2)
  		{
-@@ -8056,10 +8059,10 @@ public class Card : MonoBehaviour
+@@ -8066,10 +8069,10 @@ public class Card : MonoBehaviour
  		}
  		else
  		{
@@ -40735,7 +40754,7 @@ index 50f8c147..d3418fec 100644
  		}
  		m_actorReady = true;
  		RefreshActor();
-@@ -8582,6 +8585,7 @@ public class Card : MonoBehaviour
+@@ -8592,6 +8595,7 @@ public class Card : MonoBehaviour
  	public IEnumerator AnimatePlayToDeck(GameObject mover, ZoneDeck deckZone, bool hideBackSide = false, float timeScale = 1f)
  	{
  		SoundManager.Get().LoadAndPlay("MinionToDeck_transition.prefab:8063f1b133f28e34aaeade8fcabe250c");
@@ -40743,7 +40762,7 @@ index 50f8c147..d3418fec 100644
  		Vector3 vector = deckZone.GetThicknessForLayout().GetMeshRenderer().bounds.center + IN_DECK_OFFSET;
  		if (m_entity != null && m_entity.IsMercenary())
  		{
-@@ -9142,19 +9146,19 @@ public class Card : MonoBehaviour
+@@ -9152,19 +9156,19 @@ public class Card : MonoBehaviour
  		Spell chosenSpell = GetBestDeathSpell() as Spell;
  		if (!(chosenSpell == null))
  		{
@@ -40775,7 +40794,7 @@ index 50f8c147..d3418fec 100644
  	}
  
  	private bool HandlePlayActorDeath(Actor oldActor)
-@@ -9312,41 +9316,41 @@ public class Card : MonoBehaviour
+@@ -9322,41 +9326,41 @@ public class Card : MonoBehaviour
  		Spell spell = actor.GetSpell(SpellType.FORGEABLE_HAMMER_IMPACT);
  		if (!(spell == null))
  		{
@@ -40848,7 +40867,7 @@ index 50f8c147..d3418fec 100644
  	}
  
  	private Spell GetBestNullZoneSpell()
-@@ -9395,7 +9399,7 @@ public class Card : MonoBehaviour
+@@ -9405,7 +9409,7 @@ public class Card : MonoBehaviour
  		{
  			return false;
  		}
@@ -40857,7 +40876,7 @@ index 50f8c147..d3418fec 100644
  		if (collider == null)
  		{
  			return false;
-@@ -9544,4 +9548,23 @@ public class Card : MonoBehaviour
+@@ -9554,4 +9558,23 @@ public class Card : MonoBehaviour
  		}
  		return m_cardDef.CardDef.GetComponent<T>();
  	}
@@ -46934,7 +46953,7 @@ index dbee850b..3bf3a678 100644
 +    #endregion
  }
 diff --git a/Assembly-CSharp/ChoiceCardMgr.cs b/Assembly-CSharp/ChoiceCardMgr.cs
-index d9072851..53e4af73 100644
+index 0f87c099..f9d9627d 100644
 --- a/Assembly-CSharp/ChoiceCardMgr.cs
 +++ b/Assembly-CSharp/ChoiceCardMgr.cs
 @@ -463,6 +463,8 @@ public class ChoiceCardMgr : MonoBehaviour
@@ -47108,7 +47127,16 @@ index d9072851..53e4af73 100644
  	}
  
  	private void ToggleConfirmButtonVisibility(bool visible)
-@@ -2210,11 +2219,11 @@ public class ChoiceCardMgr : MonoBehaviour
+@@ -2158,7 +2167,7 @@ public class ChoiceCardMgr : MonoBehaviour
+ 		}
+ 		else
+ 		{
+-			m_choiceStateMap.Add(playerId, choiceState);
++		m_choiceStateMap.Add(playerId, choiceState);
+ 		}
+ 		choiceState.m_waitingToStart = false;
+ 		choiceState.m_hasBeenConcealed = false;
+@@ -2217,11 +2226,11 @@ public class ChoiceCardMgr : MonoBehaviour
  		}
  		if (choiceState.m_isFriendly && entity.IsLaunchpad())
  		{
@@ -47124,7 +47152,7 @@ index d9072851..53e4af73 100644
  				choiceState.m_cards.Add(card);
  			}
  			ShowStarshipHUD(choiceState);
-@@ -2234,19 +2243,19 @@ public class ChoiceCardMgr : MonoBehaviour
+@@ -2241,19 +2250,19 @@ public class ChoiceCardMgr : MonoBehaviour
  					card2.ForceLoadHandActor();
  					card2.GetActor().Hide();
  					card2.transform.position = parentCard.transform.position;
@@ -47155,7 +47183,7 @@ index d9072851..53e4af73 100644
  					card2.transform.localScale = localScale;
  				}
  			}
-@@ -2300,6 +2309,7 @@ public class ChoiceCardMgr : MonoBehaviour
+@@ -2307,6 +2316,7 @@ public class ChoiceCardMgr : MonoBehaviour
  			ShowChoiceUi(choiceState);
  		}
  		HideEnlargedHand();
@@ -47163,7 +47191,7 @@ index d9072851..53e4af73 100644
  	}
  
  	private void HideSubOptions(Entity chosenEntity = null)
-@@ -2402,6 +2412,11 @@ public class ChoiceCardMgr : MonoBehaviour
+@@ -2409,6 +2419,11 @@ public class ChoiceCardMgr : MonoBehaviour
  		}
  		PlayChoiceEffects(choiceState, choiceState.m_isFriendly);
  		choiceState.m_hasBeenRevealed = true;
@@ -47175,7 +47203,7 @@ index d9072851..53e4af73 100644
  	}
  
  	private void ConcealChoiceCardsUsingCustomSpell(ISpell customChoiceConcealSpell, ChoiceState choiceState, Network.EntitiesChosen chosen)
-@@ -2427,4 +2442,16 @@ public class ChoiceCardMgr : MonoBehaviour
+@@ -2434,4 +2449,16 @@ public class ChoiceCardMgr : MonoBehaviour
  		OnFinishedConcealChoices(entitiesChosen.PlayerId);
  		GameState.Get().OnEntitiesChosenProcessed(entitiesChosen);
  	}
@@ -68886,10 +68914,10 @@ index c20db678..f4c443cc 100644
  		public int Count => m_cards.Count;
  
 diff --git a/Assembly-CSharp/GameEntity.cs b/Assembly-CSharp/GameEntity.cs
-index f7b46b04..81160e33 100644
+index 420a6dc4..20d3028e 100644
 --- a/Assembly-CSharp/GameEntity.cs
 +++ b/Assembly-CSharp/GameEntity.cs
-@@ -1453,11 +1453,11 @@ public class GameEntity : Entity
+@@ -1454,11 +1454,11 @@ public class GameEntity : Entity
  		if (spell != null)
  		{
  			spell.SetSource(card.gameObject);
@@ -68906,7 +68934,7 @@ index f7b46b04..81160e33 100644
  		Card obj = ((card == heroCard) ? heroCard2 : heroCard);
  		SpellType spellType2 = ((card == heroCard) ? SpellType.ENDGAME_VICTORY_STRIKE_FRIENDLY : SpellType.ENDGAME_VICTORY_STRIKE_ENEMY);
  		Spell actorSpell = obj.GetActorSpell(spellType2);
-@@ -1739,4 +1739,22 @@ public class GameEntity : Entity
+@@ -1740,4 +1740,22 @@ public class GameEntity : Entity
  	public virtual void UpdateNameDisplay()
  	{
  	}
@@ -69587,7 +69615,7 @@ index 81106226..1e11b2d8 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/GameState.cs b/Assembly-CSharp/GameState.cs
-index 7146516d..b75214cb 100644
+index 82f5827e..24e8d993 100644
 --- a/Assembly-CSharp/GameState.cs
 +++ b/Assembly-CSharp/GameState.cs
 @@ -11,6 +11,7 @@ using Blizzard.T5.Core;
@@ -77345,7 +77373,7 @@ index a168aca6..f865d23f 100644
  	}
  }
 diff --git a/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs b/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
-index 35467d42..5836ee34 100644
+index 8d40cae7..283c20ac 100644
 --- a/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
 +++ b/Assembly-CSharp/Hearthstone/Core/Streaming/RuntimeAssetDownloader.cs
 @@ -179,9 +179,9 @@ namespace Hearthstone.Core.Streaming
@@ -77519,7 +77547,7 @@ index be2b52ca..1e2f3332 100644
  		}
  
 diff --git a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
-index b14e08a4..ca660927 100644
+index e2d54b40..9dea7a3a 100644
 --- a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 +++ b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 @@ -1,5 +1,6 @@
@@ -77576,7 +77604,7 @@ index b14e08a4..ca660927 100644
  			catch (Exception ex)
  			{
 diff --git a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
-index 3c52e855..4c10b524 100644
+index 027bc8c6..7ed36864 100644
 --- a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 +++ b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 @@ -5,6 +5,7 @@ using System.IO;
@@ -77638,7 +77666,7 @@ index 3c52e855..4c10b524 100644
 +			// ExceptionReporterControl.Get().ExceptionReportInitialize(); // Remove so we don't send Blizzard exceptions that may be caused by us
 +			ExceptionReporterControl.Get().ExceptionReportInitializeDebug();
  			TelemetryManager.Client().SendSystemDetail(TelemetryUtil.GetUnitySystemInfo());
- 			HearthstonePerformance.Initialize(TestType, 3941259.ToString(), 210009);
+ 			HearthstonePerformance.Initialize(TestType, 3952922.ToString(), 210640);
  			HearthstonePerformance.Get()?.CaptureAppStartTime();
 @@ -303,6 +308,8 @@ namespace Hearthstone
  
@@ -77647,7 +77675,7 @@ index 3c52e855..4c10b524 100644
 +			AccessibleHearthstoneApplication.OnClosing();
 +			AccessibilityMgr.Shutdown();
  			IsHearthstoneClosing = true;
- 			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 210009, Log.UberText);
+ 			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 210640, Log.UberText);
  			if (this.OnShutdown != null)
 @@ -549,7 +556,7 @@ namespace Hearthstone
  
@@ -77686,7 +77714,7 @@ index 3c52e855..4c10b524 100644
 +			jobDefinition.AddJobFinishedEventListener(OnGameStringsLoaded);
 +			Processor.QueueJob("HearthstoneApplication.InitializeMode", Job_InitializeMode(), Array.Empty<IJobDependency>());
  			Processor.QueueJob(jobDefinition);
- 			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 210009, Log.UberText));
+ 			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 210640, Log.UberText));
  			Processor.QueueJob(HearthstoneJobs.CreateJobFromAction("HearthstoneApplication.SetWindowText", SetWindowText, jobDefinition.CreateDependency()));
 @@ -738,7 +746,12 @@ namespace Hearthstone
  			}
@@ -80918,7 +80946,7 @@ index a1a3d6a0..2ceab74f 100644
  		private WidgetTemplate m_parentWidgetTemplate;
  
 diff --git a/Assembly-CSharp/HearthstoneCheckout.cs b/Assembly-CSharp/HearthstoneCheckout.cs
-index a5fe644e..34b8d0ff 100644
+index a6c96dbb..e1f417a2 100644
 --- a/Assembly-CSharp/HearthstoneCheckout.cs
 +++ b/Assembly-CSharp/HearthstoneCheckout.cs
 @@ -191,9 +191,6 @@ public class HearthstoneCheckout : blz_commerce_log_hook, ISceneEventObserver, I
@@ -82253,7 +82281,7 @@ index 755b8a02..33d18045 100644
  	}
  
 diff --git a/Assembly-CSharp/InputManager.cs b/Assembly-CSharp/InputManager.cs
-index 17a02a39..f87e7e28 100644
+index 3dc9ab9b..12df6ccb 100644
 --- a/Assembly-CSharp/InputManager.cs
 +++ b/Assembly-CSharp/InputManager.cs
 @@ -7,6 +7,7 @@ using Blizzard.T5.Game.Spells;
@@ -85949,7 +85977,7 @@ index f6ad28c6..105e9664 100644
  	}
  
 diff --git a/Assembly-CSharp/Network.cs b/Assembly-CSharp/Network.cs
-index eefa3408..192572c0 100644
+index 58bb4d2a..de91597c 100644
 --- a/Assembly-CSharp/Network.cs
 +++ b/Assembly-CSharp/Network.cs
 @@ -37,6 +37,7 @@ using PegasusUtil;
@@ -86937,7 +86965,7 @@ index 94c5cd54..1a3aa905 100644
  			Option.DEBUG_SHOW_BATTLEGROUND_SKIN_IDS,
  			false
 diff --git a/Assembly-CSharp/OptionsMenu.cs b/Assembly-CSharp/OptionsMenu.cs
-index 159e6a31..750a6857 100644
+index 8f729cf2..a7402a5c 100644
 --- a/Assembly-CSharp/OptionsMenu.cs
 +++ b/Assembly-CSharp/OptionsMenu.cs
 @@ -6,9 +6,11 @@ using Blizzard.T5.Services;
