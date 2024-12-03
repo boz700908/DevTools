@@ -172,6 +172,12 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-12-03
+
+- Updated to Hearthstone version 31.2.0.212197 (contributed by Endefx)
+- The game startup sequence is now fully narrated (contributed by Endefx)
+- Added support for the reroll mechanic in Battlegrounds. On the hero choice screen, press R to reroll the current hero, shift+R to reroll without confirmation, A to find out how many tokens you have. (Contributed by Endefx)
+
 ### 2024-11-04
 
 - Updated to Hearthstone version 31.0.0.210640
