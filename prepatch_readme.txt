@@ -172,6 +172,14 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2024-12-10
+
+- Updated to Hearthstone version 31.2.0.213490 (contributed by Endefx)
+
+### 2024-12-03 (2)
+
+- Fixed an issue where spurious hero choices would appear for players without the season pass in Battlegrounds.
+
 ### 2024-12-03
 
 - Updated to Hearthstone version 31.2.0.212197 (contributed by Endefx)

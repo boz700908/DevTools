@@ -1,3 +1,7 @@
+### 2024-12-10
+
+- Updated to Hearthstone version 31.2.0.213490 (contributed by Endefx)
+
 ### 2024-12-03 (2)
 
 - Fixed an issue where spurious hero choices would appear for players without the season pass in Battlegrounds.
