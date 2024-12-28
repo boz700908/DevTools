@@ -2314,10 +2314,10 @@ index 00000000..75b068e6
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleCard.cs b/Assembly-CSharp/Accessibility/AccessibleCard.cs
 new file mode 100644
-index 00000000..45e19388
+index 00000000..3ffd9d89
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleCard.cs
-@@ -0,0 +1,295 @@
+@@ -0,0 +1,299 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Text;
@@ -2436,6 +2436,8 @@ index 00000000..45e19388
 +            if (entity.IsImmune()) effects.Add(LocalizedText.GLOBAL_IMMUNE);
 +            if (entity.IsDormant()) effects.Add(LocalizedText.GLOBAL_DORMANT);
 +            if (entity.HasReborn()) effects.Add(LocalizedText.GLOBAL_REBORN);
++            if (entity.HasWindfury()) effects.Add(LocalizedText.GLOBAL_WINDFURY);
++            if (entity.IsVenomous()) effects.Add(LocalizedText.GLOBAL_VENOMOUS);
 +
 +            if (effects.Count == 0)
 +            {
@@ -2465,6 +2467,8 @@ index 00000000..45e19388
 +            if (entity.IsImmune() && !entityDef.IsImmune()) effects.Add(LocalizedText.GLOBAL_IMMUNE);
 +            if (entity.IsDormant() && !entityDef.IsDormant()) effects.Add(LocalizedText.GLOBAL_DORMANT);
 +            if (entity.HasReborn() && !entityDef.HasReborn()) effects.Add(LocalizedText.GLOBAL_REBORN);
++            if (entity.HasWindfury() && !entityDef.HasWindfury()) effects.Add(LocalizedText.GLOBAL_WINDFURY);
++            if (entity.IsVenomous() && !entityDef.IsVenomous()) effects.Add(LocalizedText.GLOBAL_VENOMOUS);
 +
 +            if (effects.Count == 0)
 +            {
@@ -26689,10 +26693,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..75164264
+index 00000000..c9a2fc0a
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1241 @@
+@@ -0,0 +1,1242 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -26845,6 +26849,7 @@ index 00000000..75164264
 +    public static LocalizationKey GLOBAL_FREEZE = CreateKey("GLOBAL_KEYWORD_FREEZE");
 +    public static LocalizationKey GLOBAL_FROZEN = CreateKey("GLOBAL_KEYWORD_FROZEN");
 +    public static LocalizationKey GLOBAL_POISONOUS = CreateKey("GLOBAL_KEYWORD_POISONOUS");
++    public static LocalizationKey GLOBAL_VENOMOUS = CreateKey("GLOBAL_KEYWORD_VENOMOUS");
 +    public static LocalizationKey GLOBAL_STEALTH = CreateKey("GLOBAL_KEYWORD_STEALTH");
 +    public static LocalizationKey GLOBAL_IMMUNE = CreateKey("GLOBAL_KEYWORD_IMMUNE");
 +    public static LocalizationKey GLOBAL_DORMANT = CreateKey("GLOBAL_KEYWORD_DORMANT");
@@ -28072,10 +28077,10 @@ index 00000000..a7d8e6a6
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs b/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs
 new file mode 100644
-index 00000000..fa4ae4d2
+index 00000000..c713b36e
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,76 @@
 +﻿using Accessibility;
 +using System;
 +using System.Collections.Generic;
@@ -28126,6 +28131,7 @@ index 00000000..fa4ae4d2
 +    public static string GLOBAL_FREEZE => LocalizationUtils.Get(LocalizationKey.GLOBAL_FREEZE);
 +    public static string GLOBAL_FROZEN => LocalizationUtils.Get(LocalizationKey.GLOBAL_FROZEN);
 +    public static string GLOBAL_POISONOUS => LocalizationUtils.Get(LocalizationKey.GLOBAL_POISONOUS);
++    public static string GLOBAL_VENOMOUS => LocalizationUtils.Get(LocalizationKey.GLOBAL_VENOMOUS);
 +    public static string GLOBAL_STEALTH => LocalizationUtils.Get(LocalizationKey.GLOBAL_STEALTH);
 +    public static string GLOBAL_IMMUNE => LocalizationUtils.Get(LocalizationKey.GLOBAL_IMMUNE);
 +    public static string GLOBAL_DORMANT => LocalizationUtils.Get(LocalizationKey.GLOBAL_DORMANT);
