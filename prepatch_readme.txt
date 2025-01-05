@@ -172,6 +172,11 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2025-01-05
+
+- The windfury and venomous effects on cards will now be read (contributed by Yncat)
+- Fixed a bug where owners of the Battlegrounds season pass would be unable to claim any rewards past level 28 (contributed by Endefx)
+
 ### 2024-12-10
 
 - Updated to Hearthstone version 31.2.0.213490 (contributed by Endefx)

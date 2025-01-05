@@ -79715,7 +79715,7 @@ index 7cfe41fc..48d07095 100644
  	}
  }
 diff --git a/Assembly-CSharp/Hearthstone/Progression/RewardTrack.cs b/Assembly-CSharp/Hearthstone/Progression/RewardTrack.cs
-index 77ac34e1..9e66d5df 100644
+index 77ac34e1..7e34b12f 100644
 --- a/Assembly-CSharp/Hearthstone/Progression/RewardTrack.cs
 +++ b/Assembly-CSharp/Hearthstone/Progression/RewardTrack.cs
 @@ -2,12 +2,14 @@ using System;
@@ -79922,7 +79922,7 @@ index 77ac34e1..9e66d5df 100644
 +			if (HasOwnedRewardTrackPaidType(paidType))
 +			{
 +				RewardListDbfRecord rewardListRecord = ProgressUtils.GetRewardListRecord(record, paidType);
-+				if (rewardListRecord != null && rewardListRecord.RewardItems?.Count > 0 && !ProgressUtils.HasClaimedRewardTrackReward(ProgressUtils.GetRewardStatus(state, paidType)))
++				if (rewardListRecord != null && !rewardListRecord.Locked && rewardListRecord.RewardItems?.Count > 0 && !ProgressUtils.HasClaimedRewardTrackReward(ProgressUtils.GetRewardStatus(state, paidType)))
 +				{
 +					return true;
 +				}
