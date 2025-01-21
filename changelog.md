@@ -1,3 +1,8 @@
+### 2025-01-25
+
+- Updated to Hearthstone 31.4.0.214839 (contributed by Endefx)
+- If a player is building a starship, pressing A or shift+A will now announce the cost to launch it (contributed by Endefx)
+
 ### 2025-01-05
 
 - The windfury and venomous effects on cards will now be read (contributed by Yncat)
