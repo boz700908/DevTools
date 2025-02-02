@@ -25590,16 +25590,15 @@ index 00000000..9c7d6ed6
 +}
 diff --git a/Assembly-CSharp/Accessibility/HSASound.cs b/Assembly-CSharp/Accessibility/HSASound.cs
 new file mode 100644
-index 00000000..35c0d9f0
+index 00000000..4baf04bd
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/HSASound.cs
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,94 @@
 +using System;
 +using System.Collections;
 +using System.Collections.Generic;
 +using System.IO;
 +using UnityEngine;
-+using UnityEngine.Networking;
 +
 +namespace Accessibility
 +{
@@ -25616,10 +25615,20 @@ index 00000000..35c0d9f0
 +        public static HSASound BATTLEGROUNDS_DUOS_PING_CROSS = CreateSound("BATTLEGROUNDS_DUOS_PING_CROSS.wav");
 +        public static HSASound BATTLEGROUNDS_DUOS_PING_WARP = CreateSound("BATTLEGROUNDS_DUOS_PING_WARP.wav");
 +        public static HSASound BATTLEGROUNDS_DUOS_PING_QUESTION = CreateSound("BATTLEGROUNDS_DUOS_PING_QUESTION.wav");
++
++        private static HashSet<HSASound> s_allSounds;
 +        
 +        public AudioClip AudioClip {get; private set;}
 +
 +        public string FileName {get; private set;}
++
++        public bool IsLoaded
++        {
++            get
++            {
++                return AudioClip != null;
++            }
++        }
 +
 +        private HSASound(string fileName)
 +        {
@@ -25629,40 +25638,63 @@ index 00000000..35c0d9f0
 +        private static HSASound CreateSound(string fileName)
 +        {
 +            var ret = new HSASound(fileName);
++            if (s_allSounds == null)
++            {
++                s_allSounds = new HashSet<HSASound>();
++            }
++            s_allSounds.Add(ret);
 +            return ret;
 +        }
 +
-+        public IEnumerator Load()
++        public void Load()
 +        {
 +            if (AudioClip != null)
 +            {
 +                AccessibilityUtils.LogFatalError($"HSASound Trying to load a clip that has already been loaded: {FileName}");
-+                yield break;
++                return;
 +            }
 +
 +            var hsDirectory = Directory.GetCurrentDirectory();
 +            var fullPath = Path.Combine(hsDirectory, "Accessibility", "Sounds", FileName);
-+            var url = new Uri(fullPath).AbsoluteUri;
-+            var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
-+            yield return www.SendWebRequest();
 +            try
 +            {
-+                AudioClip = DownloadHandlerAudioClip.GetContent(www);
++                var parser = new WavFileParser();
++                parser.Load(fullPath);
++                var clip = UnityEngine.AudioClip.Create(FileName, parser.Samples.Length / parser.Channels, parser.Channels, (int)parser.SampleRate, false);
++                clip.SetData(parser.Samples, 0);
++                AudioClip = clip;
 +            }
 +            catch (Exception x)
 +            {
 +                AccessibilityUtils.LogFatalError($"HSASound: Could not load clip {FileName}.\n{x}\n{x.StackTrace}");
 +            }
 +        }
++
++        public static void LoadAll()
++        {
++            float start = Time.realtimeSinceStartup;
++            int numLoaded = 0;
++            foreach (var sound in s_allSounds)
++            {
++                sound.Load();
++                if (sound.IsLoaded)
++                {
++                    numLoaded++;
++                }
++            }
++
++            float totalTime = Time.realtimeSinceStartup - start;
++            Log.Accessibility.PrintInfo("HSASound: Loaded {0} sounds in {1} seconds", numLoaded, totalTime);
++        }
 +    }
 +}
 \ No newline at end of file
 diff --git a/Assembly-CSharp/Accessibility/HSASoundMgr.cs b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
 new file mode 100644
-index 00000000..56cc3704
+index 00000000..60e7d37e
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +using System;
 +using System.Collections;
 +using UnityEngine;
@@ -25679,6 +25711,7 @@ index 00000000..56cc3704
 +        {
 +            s_instance = this;
 +            m_audioSource = GetComponent<AudioSource>();
++            HSASound.LoadAll();
 +        }
 +
 +        public static HSASoundMgr Get()
@@ -25689,18 +25722,18 @@ index 00000000..56cc3704
 +        public void Play(HSASound sound)
 +        {
 +            AccessibilityUtils.LogDebug($"HSASound: Playing {sound.FileName}");
-+            if (sound.AudioClip == null)
++            if (!sound.IsLoaded)
 +            {
-+                StartCoroutine(LoadAndPlay(sound));
++                LoadAndPlay(sound);
 +                return;
 +            }
 +            m_audioSource.PlayOneShot(sound.AudioClip);
 +        }
 +
-+        private IEnumerator LoadAndPlay(HSASound sound)
++        private void LoadAndPlay(HSASound sound)
 +        {
-+            yield return sound.Load();
-+            if (sound.AudioClip != null)
++            sound.Load();
++            if (sound.IsLoaded)
 +            {
 +                m_audioSource.PlayOneShot(sound.AudioClip);
 +            }
@@ -29892,6 +29925,139 @@ index 00000000..d2f5c055
 +            return 1 + m_cards.FindIndex((Card currCard) => currCard == card);
 +        }
 +
++    }
++}
+\ No newline at end of file
+diff --git a/Assembly-CSharp/Accessibility/WavFileParser.cs b/Assembly-CSharp/Accessibility/WavFileParser.cs
+new file mode 100644
+index 00000000..48bf5125
+--- /dev/null
++++ b/Assembly-CSharp/Accessibility/WavFileParser.cs
+@@ -0,0 +1,126 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++
++namespace Accessibility
++{
++    public class WavFileParser
++    {
++        public uint SampleRate { get; private set; }
++        public ushort Channels { get; private set; }
++        public ushort BitsPerSample { get; private set; }
++        public ushort AudioFormat { get; private set; }
++        public float[] Samples { get; private set; }
++
++        public void Load(string filePath)
++        {
++            using (var reader = new BinaryReader(File.Open(filePath, FileMode.Open)))
++            {
++                // Read RIFF header
++                string riff = new string(reader.ReadChars(4));
++                if (riff != "RIFF")
++                    throw new FormatException("Not a valid WAV file.");
++
++                reader.ReadUInt32(); // Skip file size
++                string wave = new string(reader.ReadChars(4));
++                if (wave != "WAVE")
++                    throw new FormatException("Not a valid WAV file.");
++
++                bool formatChunkFound = false;
++                bool dataChunkFound = false;
++                var allData = new List<byte>();
++
++                // Read chunks
++                while (reader.BaseStream.Position < reader.BaseStream.Length)
++                {
++                    string chunkId = new string(reader.ReadChars(4));
++                    uint chunkSize = reader.ReadUInt32();
++
++                    if (chunkId == "fmt ")
++                    {
++                        // Parse format chunk
++                        AudioFormat = reader.ReadUInt16();
++                        if (AudioFormat != 1 && AudioFormat != 3)
++                            throw new NotSupportedException("Only PCM and IEEE float formats are supported.");
++
++                        Channels = reader.ReadUInt16();
++                        SampleRate = reader.ReadUInt32();
++                        reader.BaseStream.Seek(6, SeekOrigin.Current); // Skip byte rate and block align
++                        BitsPerSample = reader.ReadUInt16();
++
++                        // Skip any remaining format chunk data
++                        if (chunkSize > 16)
++                            reader.ReadBytes((int)(chunkSize - 16));
++
++                        formatChunkFound = true;
++                    }
++                    else if (chunkId == "data")
++                    {
++                        // Read all data chunks
++                        byte[] chunkData = reader.ReadBytes((int)chunkSize);
++                        allData.AddRange(chunkData);
++                        dataChunkFound = true;
++                    }
++                    else
++                    {
++                        // Skip unknown chunks
++                        reader.BaseStream.Seek(chunkSize, SeekOrigin.Current);
++                    }
++
++                    if (formatChunkFound && dataChunkFound)
++                        break;
++                }
++
++                if (!formatChunkFound)
++                    throw new FormatException("Format chunk not found.");
++                if (!dataChunkFound)
++                    throw new FormatException("Data chunk not found.");
++
++                // Convert raw bytes to float samples
++                var samplesList = new List<float>();
++                byte[] dataChunkBytes = allData.ToArray();
++
++                using (var dataReader = new BinaryReader(new MemoryStream(dataChunkBytes)))
++                {
++                    while (dataReader.BaseStream.Position < dataReader.BaseStream.Length)
++                    {
++                        switch (BitsPerSample)
++                        {
++                            case 8: // 8-bit unsigned
++                                byte byteSample = dataReader.ReadByte();
++                                samplesList.Add((byteSample - 128) / 128f);
++                                break;
++
++                            case 16: // 16-bit signed
++                                short shortSample = dataReader.ReadInt16();
++                                samplesList.Add(shortSample / 32768f);
++                                break;
++                            
++                            case 24 when AudioFormat == 1: //24-bit signed
++                                byte low = dataReader.ReadByte();
++                                int high = dataReader.ReadInt16() << 8;
++                                samplesList.Add((high | low) / 8388608f);
++                                break;
++
++                            case 32 when AudioFormat == 1: // 32-bit signed
++                                int intSample = dataReader.ReadInt32();
++                                samplesList.Add(intSample / 2147483648f);
++                                break;
++
++                            case 32 when AudioFormat == 3: // 32-bit float
++                                float floatSample = dataReader.ReadSingle();
++                                samplesList.Add(floatSample);
++                                break;
++
++                            default:
++                                throw new NotSupportedException(
++                                    $"Unsupported audio format: {BitsPerSample}-bit {(AudioFormat == 1 ? "PCM" : "Float")}");
++                        }
++                    }
++                }
++
++                Samples = samplesList.ToArray();
++            }
++        }
 +    }
 +}
 \ No newline at end of file
