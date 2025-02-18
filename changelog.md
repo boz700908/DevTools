@@ -1,3 +1,8 @@
+### 2025-02-18
+
+- Updated to Hearthstone version 31.6.0.216423 (contributed by Endefx)
+- In Battlegrounds, some anomalies will give you access to additional hero powers. After pressing P, use the left and right arrow keys to navigate between them.
+
 ### 2025-01-25
 
 - Updated to Hearthstone 31.4.0.214839 (contributed by Endefx)
