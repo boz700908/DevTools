@@ -2354,10 +2354,10 @@ index 00000000..75b068e6
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleCard.cs b/Assembly-CSharp/Accessibility/AccessibleCard.cs
 new file mode 100644
-index 00000000..479f1c95
+index 00000000..b50bf497
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleCard.cs
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,305 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Text;
@@ -2478,6 +2478,7 @@ index 00000000..479f1c95
 +            if (entity.HasReborn()) effects.Add(LocalizedText.GLOBAL_REBORN);
 +            if (entity.HasWindfury()) effects.Add(LocalizedText.GLOBAL_WINDFURY);
 +            if (entity.IsVenomous()) effects.Add(LocalizedText.GLOBAL_VENOMOUS);
++            if (entity.HasTag(GAME_TAG.HAS_DARK_GIFT)) effects.Add(LocalizedText.GLOBAL_DARK_GIFT);
 +
 +            if (effects.Count == 0)
 +            {
@@ -16939,10 +16940,10 @@ index 00000000..77efef08
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleTraditionalCard.cs b/Assembly-CSharp/Accessibility/AccessibleTraditionalCard.cs
 new file mode 100644
-index 00000000..4a1d1b1f
+index 00000000..f5a02bf3
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleTraditionalCard.cs
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,423 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Text;
@@ -16952,6 +16953,8 @@ index 00000000..4a1d1b1f
 +{
 +    class AccessibleTraditionalCard : AccessibleCard
 +    {
++        private AccessibleTraditionalCard m_linkedCard; // see GetLinesForNightmareBonus for what this is.
++
 +        internal AccessibleTraditionalCard(AccessibleComponent parent, Card card) : base(parent, card)
 +        {
 +        }
@@ -16985,6 +16988,10 @@ index 00000000..4a1d1b1f
 +            else if (m_card.GetEntity().IsSecret() && !m_card.GetEntity().IsControlledByFriendlySidePlayer())
 +            {
 +                return GetLinesForOpponentSecret();
++            }
++            else if (m_card.GetEntity().HasTag(GAME_TAG.IS_NIGHTMARE_BONUS))
++            {
++                return GetLinesForNightmareBonus();
 +            }
 +            else
 +            {
@@ -17142,7 +17149,24 @@ index 00000000..4a1d1b1f
 +            return lines;
 +        }
 +
-+        private List<string> GetLinesForNormalCard()
++        private List<string> GetLinesForNightmareBonus()
++        {
++            if (m_linkedCard == null)
++            {
++                Entity linkedEntity = GameState.Get().GetEntity(m_card.GetEntity().GetTag(GAME_TAG.TAG_SCRIPT_DATA_ENT_1));
++                if (linkedEntity == null)
++                {
++                    AccessibilityUtils.LogFatalError($"Entity {m_card.GetEntity().GetEntityId()} has IS_BIGHTMARE_BONUS but no linked entity!");
++                    return new List<string>();
++                }
++                m_linkedCard = new AccessibleTraditionalCard(m_parent, linkedEntity.GetCard());
++            }
++
++            // Note: linkedCard is always a minion
++            return m_linkedCard.GetLinesForNormalCard(m_card.GetEntity());
++        }
++
++        private List<string> GetLinesForNormalCard(Entity extraEntity = null)
 +        {
 +            var zone = m_card.GetEntity().GetZone();
 +            var isInPlayZone = zone == TAG_ZONE.PLAY;
@@ -17177,6 +17201,12 @@ index 00000000..4a1d1b1f
 +            }
 +
 +            AccessibleCardUtils.AddLineIfExists(GetDescription(), lines);
++            if (extraEntity != null)
++            {
++                var textInHand = extraEntity.GetCardTextBuilder().BuildCardTextInHand(extraEntity);
++                lines.Add(AccessibleSpeechUtils.CombineWordsWithColon(extraEntity.GetName(), textInHand));
++            }
++
 +            AccessibleCardUtils.AddLineIfExists(GetRace(), lines); // Handles spell school as well
 +            AccessibleCardUtils.AddLineIfExists(GetFaction(), lines);
 +
@@ -26784,10 +26814,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..f9eff026
+index 00000000..c04362ff
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1243 @@
+@@ -0,0 +1,1244 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -26950,6 +26980,7 @@ index 00000000..f9eff026
 +    public static LocalizationKey GLOBAL_CURSED = CreateKey("ACCESSIBILITY_GLOBAL_KEYWORD_CURSED");
 +    public static LocalizationKey GLOBAL_READY = CreateKey("GAMEPLAY_LETTUCE_READY_BUTTON");
 +        public static LocalizationKey GLOBAL_HAUNTED = CreateKey("ACCESSIBILITY_GLOBAL_KEYWORD_HAUNTED");
++        public static LocalizationKey GLOBAL_DARK_GIFT = CreateKey("GLOBAL_KEYWORD_DARKGIFT");
 +
 +    // Gameplay
 +    public static LocalizationKey GAMEPLAY_YOUR_TURN = CreateKey("GAMEPLAY_YOUR_TURN");
@@ -28169,10 +28200,10 @@ index 00000000..a7d8e6a6
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs b/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs
 new file mode 100644
-index 00000000..c713b36e
+index 00000000..d8f16ff9
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizedText.cs
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,77 @@
 +﻿using Accessibility;
 +using System;
 +using System.Collections.Generic;
@@ -28230,6 +28261,7 @@ index 00000000..c713b36e
 +    public static string GLOBAL_REBORN => LocalizationUtils.Get(LocalizationKey.GLOBAL_REBORN);
 +    public static string GLOBAL_ENCHANTMENT => LocalizationUtils.Get(LocalizationKey.GLOBAL_ENCHANTMENT);
 +    public static string GLOBAL_SILENCE => LocalizationUtils.Get(LocalizationKey.GLOBAL_SILENCE);
++    public static string GLOBAL_DARK_GIFT => LocalizationUtils.Get(LocalizationKey.GLOBAL_DARK_GIFT);
 +
 +    // Gameplay
 +    public static string GAMEPLAY_YOUR_TURN => LocalizationUtils.Get(LocalizationKey.GAMEPLAY_YOUR_TURN);

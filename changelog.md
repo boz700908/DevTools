@@ -1,3 +1,7 @@
+### 2025-02-20
+
+- Added support for the dark gift mechanic (contributed by Endefx)
+
 ### 2025-02-18
 
 - Updated to Hearthstone version 31.6.0.216423 (contributed by Endefx)
