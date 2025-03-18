@@ -25594,10 +25594,10 @@ index 00000000..9c7d6ed6
 +}
 diff --git a/Assembly-CSharp/Accessibility/HSASound.cs b/Assembly-CSharp/Accessibility/HSASound.cs
 new file mode 100644
-index 00000000..70172b0f
+index 00000000..dd47f4e0
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/HSASound.cs
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,93 @@
 +using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -25654,8 +25654,7 @@ index 00000000..70172b0f
 +        {
 +            if (AudioClip != null)
 +            {
-+                AccessibilityUtils.LogFatalError($"HSASound Trying to load a clip that has already been loaded: {FileName}");
-+                return;
++                AccessibilityUtils.LogDebug($"HSASound Reloading {FileName}");
 +            }
 +
 +            var hsDirectory = Directory.GetCurrentDirectory();
@@ -25676,11 +25675,6 @@ index 00000000..70172b0f
 +
 +        public static void LoadAll()
 +        {
-+            var wasDebugEnabled = AccessibilityUtils.GetDebugLoggingState();
-+            if (!wasDebugEnabled)
-+            {
-+                AccessibilityUtils.DebugLoggingToggle();
-+            }
 +            float start = Time.realtimeSinceStartup;
 +            int numLoaded = 0;
 +            foreach (var sound in s_allSounds)
@@ -25694,20 +25688,16 @@ index 00000000..70172b0f
 +
 +            float totalTime = Time.realtimeSinceStartup - start;
 +            Log.Accessibility.PrintInfo("HSASound: Loaded {0} sounds in {1} seconds", numLoaded, totalTime);
-+            if (!wasDebugEnabled)
-+            {
-+                AccessibilityUtils.DebugLoggingToggle();
-+            }
 +        }
 +    }
 +}
 \ No newline at end of file
 diff --git a/Assembly-CSharp/Accessibility/HSASoundMgr.cs b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
 new file mode 100644
-index 00000000..60e7d37e
+index 00000000..117ec090
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/HSASoundMgr.cs
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,57 @@
 +using System;
 +using System.Collections;
 +using UnityEngine;
@@ -25725,6 +25715,12 @@ index 00000000..60e7d37e
 +            s_instance = this;
 +            m_audioSource = GetComponent<AudioSource>();
 +            HSASound.LoadAll();
++            AudioSettings.OnAudioConfigurationChanged += OnAudioConfigurationChanged;
++        }
++
++        private void OnDestroy()
++        {
++            AudioSettings.OnAudioConfigurationChanged -= OnAudioConfigurationChanged;
 +        }
 +
 +        public static HSASoundMgr Get()
@@ -25750,6 +25746,12 @@ index 00000000..60e7d37e
 +            {
 +                m_audioSource.PlayOneShot(sound.AudioClip);
 +            }
++        }
++
++        private void OnAudioConfigurationChanged(bool deviceChanged)
++        {
++            // Per Unity docs, any externally created audio clips are invalidated when the audio configuration changes.
++            HSASound.LoadAll();
 +        }
 +    }
 +}
