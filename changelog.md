@@ -1,3 +1,9 @@
+### 2025-03-18
+
+- Updated to Hearthstone version 32.0.0.217964 (contributed by Endefx)
+- In the crafting mode of the collection manager, additional card filters are now available (contributed by Endefx)
+- The elusive effect on cards will now be read (contributed by Endefx)
+
 ### 2025-02-20
 
 - Added support for the dark gift mechanic (contributed by Endefx)
