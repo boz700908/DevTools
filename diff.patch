@@ -10768,10 +10768,10 @@ index 00000000..d81874ca
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleJournal.cs b/Assembly-CSharp/Accessibility/AccessibleJournal.cs
 new file mode 100644
-index 00000000..c5e80c8f
+index 00000000..e60c8422
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleJournal.cs
-@@ -0,0 +1,1197 @@
+@@ -0,0 +1,1196 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -11009,8 +11009,8 @@ index 00000000..c5e80c8f
 +            var dailySpecific = AccessibleUnityUtils.GetChildObject(questLog.gameObject, "Root/DailySpecific");
 +            var weeklySpecific = AccessibleUnityUtils.GetChildObject(questLog.gameObject, "Root/WeeklySpecific");
 +
-+            var dailyQuestList = AccessibleUnityUtils.GetChildObject(dailySpecific, "DailyQuestList/QuestList");
-+            var weeklyQuestList = AccessibleUnityUtils.GetChildObject(weeklySpecific, "WeeklyQuestList/QuestList");
++            var dailyQuestList = AccessibleUnityUtils.GetChildObject(dailySpecific, "DailyQuestList/QuestList/Root");
++            var weeklyQuestList = AccessibleUnityUtils.GetChildObject(weeklySpecific, "WeeklyQuestList/QuestList/Root");
 +
 +            var dailyTitle = AccessibleUnityUtils.GetChildObject(dailySpecific, "DailyTitle_Text");
 +            var weeklyTitle = AccessibleUnityUtils.GetChildObject(weeklySpecific, "WeeklyTitle_Text");
@@ -11091,17 +11091,16 @@ index 00000000..c5e80c8f
 +                return ret;
 +            }
 +
-+            var root = questList.transform.Find("Root");
 +
-+            for (int i = 0; i < root.childCount; i++)
++            for (int i = 0; i < questList.transform.childCount; i++)
 +            {
-+                var child = root.GetChild(i);
++                var child = questList.transform.GetChild(i);
 +
 +                var questTileGO = child.Find("QuestTile");
 +
 +                if (questTileGO != null)
 +                {
-+                    var questTile = questTileGO.GetComponent<Hearthstone.Progression.QuestTile>();
++                    var questTile = questTileGO.GetComponentInChildren<Hearthstone.Progression.QuestTile>();
 +
 +                    if (questTile != null)
 +                    {
@@ -11178,6 +11177,10 @@ index 00000000..c5e80c8f
 +            else if (m_curState == State.READING_WEEKLY_QUESTS)
 +            {
 +                m_weeklyQuests.StartReading();
++            }
++            else if (m_curState == State.EVENT_QUESTS)
++            {
++                m_eventQuests.StartReading();
 +            }
 +        }
 +
@@ -11303,16 +11306,12 @@ index 00000000..c5e80c8f
 +
 +        private void ReadEventQuests()
 +        {
-+            QuestManager questManager = QuestManager.Get();
-+            QuestListDataModel m_questList = questManager.CreateActiveQuestsDataModel(Assets.QuestPool.QuestPoolType.EVENT, (Assets.QuestPool.RewardTrackType)GetRewardTrack().TrackDataModel.RewardTrackType, appendTimeUntilNextQuest: true);
-+            m_questList.Quests.Sort(QuestManager.SortChainQuestsToFront); List<QuestDataModel> quests = m_questList.Quests.ToList();
-+            List<AccessibleQuest> questList = new List<AccessibleQuest>();
-+            foreach (QuestDataModel q in quests)
-+            {
-+                AccessibleQuest newItem = new AccessibleQuest(this, q);
-+                questList.Add(newItem);
-+            }
-+            m_eventQuests = new AccessibleListOfItems<AccessibleQuest>(null, questList);
++            var innerTrayManager = GetJournalInnerTrayManager();
++
++            var questList = innerTrayManager.transform.Find("Root/EventTab/EventTab/Root/Event/Quests");
++            var questTiles = GetQuestTiles(questList.gameObject);
++            var accessibleQuests = CreateQuestsFromQuestTiles(questTiles);
++            m_eventQuests = new AccessibleListOfItems<AccessibleQuest>(this, accessibleQuests);
 +            m_eventQuests.SetGoBackAction(() => ReadEventTab(false));
 +            m_curState = State.EVENT_QUESTS;
 +            m_eventQuests.StartReading();
@@ -14568,10 +14567,10 @@ index 00000000..1112ecdf
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleQuest.cs b/Assembly-CSharp/Accessibility/AccessibleQuest.cs
 new file mode 100644
-index 00000000..6567652c
+index 00000000..dc1d9fbe
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleQuest.cs
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,188 @@
 +﻿using System.Collections.Generic;
 +using Hearthstone.DataModels;
 +
@@ -14659,7 +14658,7 @@ index 00000000..6567652c
 +            }
 +            else if (AccessibleKey.REROLL_QUEST.IsPressed() && CanRerollQuest())
 +			{
-+				AccessibleWidgetUtils.ClickButton(GetRerollQuestButton());
++				m_questTile.GetComponent<Hearthstone.UI.WidgetTemplate>().TriggerEvent("CLICKED_REROLL");
 +				return true;
 +			}
 +			else if (AccessibleKey.ABANDON_QUEST.IsPressed() && CanAbandonQuest())
@@ -14733,17 +14732,12 @@ index 00000000..6567652c
 +
 +        private bool CanRerollQuest()
 +		{
-+            return GetRerollQuestButton() != null;
++            return m_questTile != null && m_questDataModel.RerollCount > 0;
 +		}
 +
 +		private PegUIElement GetAbandonQuestButton()
 +		{
 +            return GetAbandonOrRerollQuestButton("AbandonButton");
-+		}
-+
-+		private PegUIElement GetRerollQuestButton()
-+		{
-+            return GetAbandonOrRerollQuestButton("RerollButton");
 +		}
 +
 +        private PegUIElement GetAbandonOrRerollQuestButton(string buttonName)
