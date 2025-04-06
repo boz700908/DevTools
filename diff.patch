@@ -4066,10 +4066,10 @@ index 00000000..4127bfcd
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 00000000..a3ad1e6b
+index 00000000..ebabfd90
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,2997 @@
+@@ -0,0 +1,2992 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -5430,11 +5430,6 @@ index 00000000..a3ad1e6b
 +                m_curState = AccessibleGameState.UNKNOWN;
 +            }
 +
-+            if (m_curState != AccessibleGameState.BROWSING_HISTORY)
-+            {
-+                // Reset history in case turn ends while we're reading history or something
-+                AccessibleHistoryMgr.Get().StopReadingHistory();
-+            }
 +        }
 +
 +        protected void ResetChoiceCardsIfNecessary()
