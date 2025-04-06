@@ -26076,10 +26076,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..0a35e3b3
+index 00000000..a2359bb3
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1227 @@
+@@ -0,0 +1,1228 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -26133,6 +26133,7 @@ index 00000000..0a35e3b3
 +    public static LocalizationKey OPTIONS_MENU_AUTO_ATTACK_SPEED_SLOW = CreateKey("ACCESSIBILITY_OPTIONS_MENU_AUTO_ATTACK_SPEED_SLOW");
 +    public static LocalizationKey OPTIONS_MENU_AUTO_ATTACK_SPEED_MEDIUM = CreateKey("ACCESSIBILITY_OPTIONS_MENU_AUTO_ATTACK_SPEED_MEDIUM");
 +    public static LocalizationKey OPTIONS_MENU_AUTO_ATTACK_SPEED_FAST = CreateKey("ACCESSIBILITY_OPTIONS_MENU_AUTO_ATTACK_SPEED_FAST");
++    public static LocalizationKey OPTIONS_MENU_AUTO_ATTACK_SPEED_FASTEST = CreateKey("ACCESSIBILITY_OPTIONS_MENU_AUTO_ATTACK_SPEED_FASTEST");
 +    public static LocalizationKey OPTIONS_MENU_SAVE_BATTLE_LOGS = CreateKey("ACCESSIBILITY_OPTIONS_MENU_SAVE_BATTLE_LOGS");
 +
 +    // Hub
@@ -86997,7 +86998,7 @@ index 0fc03415..31611d34 100644
  			Option.DEBUG_SHOW_BATTLEGROUND_SKIN_IDS,
  			false
 diff --git a/Assembly-CSharp/OptionsMenu.cs b/Assembly-CSharp/OptionsMenu.cs
-index 9edb494a..cd33f537 100644
+index 9edb494a..40e14c29 100644
 --- a/Assembly-CSharp/OptionsMenu.cs
 +++ b/Assembly-CSharp/OptionsMenu.cs
 @@ -6,9 +6,11 @@ using Blizzard.T5.Services;
@@ -87013,20 +87014,21 @@ index 9edb494a..cd33f537 100644
  {
  	public delegate void hideHandler();
  
-@@ -235,6 +237,12 @@ public class OptionsMenu : MonoBehaviour
+@@ -235,6 +237,13 @@ public class OptionsMenu : MonoBehaviour
  		UpdateUI();
  		m_graphicsGroup.GetComponent<MultiSliceElement>().UpdateSlices();
  		m_graphicsManager.OnResolutionChangedEvent += UpdateMenuItemValues;
 +		#region accessibility
 +		m_autoAttackSpeeds.Clear();
-+		m_autoAttackSpeeds.Add(1.0f,LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_SLOW));
-+		m_autoAttackSpeeds.Add(0.8f,LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_MEDIUM));
-+		m_autoAttackSpeeds.Add(0.5f,LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_FAST));
++		m_autoAttackSpeeds.Add(1.0f, LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_SLOW));
++		m_autoAttackSpeeds.Add(0.8f, LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_MEDIUM));
++		m_autoAttackSpeeds.Add(0.5f, LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_FAST));
++		m_autoAttackSpeeds.Add(0.1f, LocalizationUtils.Get(LocalizationKey.OPTIONS_MENU_AUTO_ATTACK_SPEED_FASTEST));
 +		#endregion
  	}
  
  	public void OnDestroy()
-@@ -283,10 +291,13 @@ public class OptionsMenu : MonoBehaviour
+@@ -283,10 +292,13 @@ public class OptionsMenu : MonoBehaviour
  		UpdateOtherUI();
  		ShowOrHide(showOrHide: true);
  		AnimationUtil.ShowWithPunch(base.gameObject, HIDDEN_SCALE, 1.1f * NORMAL_SCALE, NORMAL_SCALE, null, noFade: true);
@@ -87040,7 +87042,7 @@ index 9edb494a..cd33f537 100644
  		ShowOrHide(showOrHide: false);
  		if (m_hideHandler != null && callHideHandler)
  		{
-@@ -382,7 +393,7 @@ public class OptionsMenu : MonoBehaviour
+@@ -382,7 +394,7 @@ public class OptionsMenu : MonoBehaviour
  
  	private bool CanShowOtherMenuOptions()
  	{
@@ -87049,7 +87051,7 @@ index 9edb494a..cd33f537 100644
  		{
  			return false;
  		}
-@@ -694,4 +705,151 @@ public class OptionsMenu : MonoBehaviour
+@@ -694,4 +706,151 @@ public class OptionsMenu : MonoBehaviour
  		m_soundOptionsMenu.Show();
  		m_soundOptionsMenuLoading = false;
  	}
