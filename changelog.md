@@ -1,3 +1,7 @@
+### 2026-06-02
+
+- Updated to Hearthstone version 35.6.0.243002 (contributed by Endefx)
+
 ### 2026-05-12
 
 - It is now possible to use the numpad keys in addition to the main number row for fast navigation among cards (contributed by Leibylucw)
