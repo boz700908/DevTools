@@ -172,6 +172,10 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2026-06-03
+
+- Add support for the new "Prepare" mechanic. Press T on a preparable card to invoke it (same as trade or forge). (Contributed by Endefx).
+
 ### 2026-06-02
 
 - Updated to Hearthstone version 35.6.0.243002 (contributed by Endefx)

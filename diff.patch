@@ -4127,10 +4127,10 @@ index 00000000..4555017d
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 00000000..d7e512ca
+index 00000000..a04c3830
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,3094 @@
+@@ -0,0 +1,3116 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -4165,7 +4165,7 @@ index 00000000..d7e512ca
 +            SUMMONING_MINION,
 +            POSITIONING_LOCATION,
 +            PLAYING_CARD,
-+            TRADING_CARD,
++            PERFORMING_DECK_ACTION,
 +            CONFIRMING_END_TURN,
 +            BROWSING_HISTORY,
 +            ALL_MINIONS_TO_FACE,
@@ -4225,8 +4225,8 @@ index 00000000..d7e512ca
 +
 +        protected bool m_justReconnected;
 +
-+        private bool m_tradingCard;
-+        private bool m_tradingCardWaitingForHold; // Used to prevent "Summon?" or "Play?" when a card is traded straight from hand but we still need to wait for it to be held
++        private bool m_performingDeckAction;
++        private bool m_performingDeckActionWaitingForHold; // Used to prevent "Summon?" or "Play?" when a card is traded straight from hand but we still need to wait for it to be held
 +
 +        protected bool m_forceAnnounceChooseTarget; // Needed so that cards with multiple targets can correctly inform the player.
 +        private bool m_reverseTargetWaitingForDrag;
@@ -4399,8 +4399,8 @@ index 00000000..d7e512ca
 +            m_summoningMinionListeners.Clear();
 +            m_stopHidingMouse = false;
 +            m_waitingForMulliganReplacementCards = false;
-+            m_tradingCard = false;
-+            m_tradingCardWaitingForHold = false;
++            m_performingDeckAction = false;
++            m_performingDeckActionWaitingForHold = false;
 +            m_forceAnnounceChooseTarget = false;
 +            m_reverseTargetWaitingForDrag = false;
 +            m_disableManaCounters = false;
@@ -4625,9 +4625,9 @@ index 00000000..d7e512ca
 +                HandleMinionToFace();
 +                return;
 +            }
-+            else if (m_curState == AccessibleGameState.TRADING_CARD)
++            else if (m_curState == AccessibleGameState.PERFORMING_DECK_ACTION)
 +            {
-+                HandleTradingCard();
++                HandlePerformingDeckAction();
 +                return;
 +            }
 +            else if (m_curState == AccessibleGameState.REVERSE_TARGET_DRAGGING_CARD)
@@ -4718,7 +4718,7 @@ index 00000000..d7e512ca
 +                    HandleCardReadingInput();
 +                    HandleCheckStatusKeys();
 +                    HandleCardPlacement();
-+                    HandleTradeCardWhenHoldingCardInput();
++                    HandleDeckActionWhenHoldingCardInput();
 +                    return;
 +                case AccessibleGameState.POSITIONING_LOCATION:
 +                    HandleCardReadingInput();
@@ -4730,7 +4730,7 @@ index 00000000..d7e512ca
 +                    //HandleCardReadingInput();
 +                    HandleCheckStatusKeys();
 +                    HandlePlayingCard();
-+                    HandleTradeCardWhenHoldingCardInput();
++                    HandleDeckActionWhenHoldingCardInput();
 +                    return;
 +                case AccessibleGameState.BROWSING_HISTORY:
 +                    HandleHistoryInput();
@@ -4838,29 +4838,43 @@ index 00000000..d7e512ca
 +            }
 +        }
 +
-+        private void HandleTradeCardWhenHoldingCardInput()
++        private void HandleDeckActionWhenHoldingCardInput()
 +        {
-+            if (AccessibleKey.TRADE_CARD.IsPressed() && CanTradeCard(m_heldCard))
++            if (AccessibleKey.PERFORM_DECK_ACTION.IsPressed() && CanPerformDeckAction(m_heldCard))
 +            {
-+                QueryTradeOrForgeCard(m_heldCard);
++                QueryDeckAction(m_heldCard);
 +            }
 +        }
 +
-+        private void QueryTradeOrForgeCard(Card card)
++        private void QueryDeckAction(Card card)
 +        {
-+            m_tradingCard = true;
-+            var key = card.GetEntity().IsTradeable() ? LocalizationKey.GAMEPLAY_QUERY_TRADE_CARD : LocalizationKey.GAMEPLAY_QUERY_FORGE_CARD;
++            m_performingDeckAction = true;
++            var key = GetDeckActionKey(card);
 +            AccessibilityMgr.Output(this, LocalizationUtils.Get(key));
 +        }
 +
-+        private bool CanTradeCard(Card card)
++        private static LocalizationKey GetDeckActionKey(Card card)
++        {
++            var entity = card.GetEntity();
++            if (entity.IsForgeable())
++            {
++                return LocalizationKey.GAMEPLAY_QUERY_FORGE_CARD;
++            }
++            if (entity.IsPrepareable())
++            {
++                return LocalizationKey.GAMEPLAY_QUERY_PREPARE_CARD;
++            }
++            return LocalizationKey.GAMEPLAY_QUERY_TRADE_CARD;
++        }
++
++        private bool CanPerformDeckAction(Card card)
 +        {
 +            if (card == null || card.GetAccessibleZone() != GameState.Get().GetFriendlySidePlayer().GetHandZone())
 +            {
 +                return false;
 +            }
 +
-+            return card.GetEntity().IsTradeable() || card.GetEntity().IsForgeable();
++            return card.GetEntity().HasDeckAction() && !card.GetEntity().IsPassable();
 +        }
 +
 +        private int m_summonPos;
@@ -5018,7 +5032,7 @@ index 00000000..d7e512ca
 +            }
 +        }
 +
-+        private void HandleTradingCard()
++        private void HandlePerformingDeckAction()
 +        {
 +            Collider collider = Board.Get().GetDeckActionArea();
 +            if (collider != null)
@@ -5191,9 +5205,9 @@ index 00000000..d7e512ca
 +            {
 +                ClickCard();
 +            }
-+            else if (AccessibleKey.TRADE_CARD.IsPressed() && m_cardBeingRead != null && CanTradeCard(m_cardBeingRead.GetCard()))
++            else if (AccessibleKey.PERFORM_DECK_ACTION.IsPressed() && m_cardBeingRead != null && CanPerformDeckAction(m_cardBeingRead.GetCard()))
 +            {
-+                QueryTradeOrForgeCard(m_cardBeingRead.GetCard());
++                QueryDeckAction(m_cardBeingRead.GetCard());
 +                ClickCard(true);
 +            }
 +        }
@@ -5475,13 +5489,13 @@ index 00000000..d7e512ca
 +
 +            if (m_heldCard == null)
 +            {
-+                m_tradingCard = false;
++                m_performingDeckAction = false;
 +            }
-+            else if (m_tradingCardWaitingForHold && CanTradeCard(m_heldCard))
++            else if (m_performingDeckActionWaitingForHold && CanPerformDeckAction(m_heldCard))
 +            {
-+                // Additional check via CanTradeCard to prevent potential race conditions around turns ending in-between trades/selections
-+                m_tradingCardWaitingForHold = false;
-+                m_tradingCard = true;
++                // Additional check via CanPerformDeckAction to prevent potential race conditions around turns ending in-between trades/selections
++                m_performingDeckActionWaitingForHold = false;
++                m_performingDeckAction = true;
 +            }
 +            else if (m_curResponseMode == GameState.ResponseMode.OPTION_REVERSE_TARGET)
 +            {
@@ -5507,9 +5521,9 @@ index 00000000..d7e512ca
 +            {
 +                m_curState = AccessibleGameState.MINION_TO_FACE;
 +            }
-+            else if (m_tradingCard)
++            else if (m_performingDeckAction)
 +            {
-+                m_curState = AccessibleGameState.TRADING_CARD;
++                m_curState = AccessibleGameState.PERFORMING_DECK_ACTION;
 +            }
 +            else if (m_reverseTargetWaitingForDrag)
 +            {
@@ -5962,16 +5976,16 @@ index 00000000..d7e512ca
 +            }
 +        }
 +
-+        private void ClickCard(bool tradingCard = false)
++        private void ClickCard(bool performingDeckAction = false)
 +        {
 +            if (m_cardBeingRead == null)
 +            {
 +                return;
 +            }
 +
-+            if (tradingCard)
++            if (performingDeckAction)
 +            {
-+                m_tradingCardWaitingForHold = true;
++                m_performingDeckActionWaitingForHold = true;
 +            }
 +
 +            if(m_cardBeingRead.GetCard()!=InputManager.Get().GetMousedOverCard()) {
@@ -6717,8 +6731,8 @@ index 00000000..d7e512ca
 +                    return GetConfirmingEndTurnHelp();
 +                case AccessibleGameState.BROWSING_HISTORY:
 +                    return GetBrowsingHistoryHelp();
-+                case AccessibleGameState.TRADING_CARD:
-+                    return GetTradingCardHelp();
++                case AccessibleGameState.PERFORMING_DECK_ACTION:
++                    return GetDeckActionHelp();
 +                    case AccessibleGameState.SHOP_CHOICE:
 +                    return GetShopChoiceHelp();
 +                default:
@@ -6756,7 +6770,7 @@ index 00000000..d7e512ca
 +            return GetOrNarrateHelpSpeech(AccessibleSpeech.GAMEPLAY_PLAY_CARD_HELP);
 +        }
 +
-+        private string GetTradingCardHelp()
++        private string GetDeckActionHelp()
 +        {
 +            return GetOrNarrateHelpSpeech(AccessibleSpeech.TUTORIAL_HOGGER_2_5);
 +        }
@@ -6951,6 +6965,14 @@ index 00000000..d7e512ca
 +                    if (card.GetEntity().IsTradeable())
 +                    {
 +                        speeches.Add(AccessibleSpeech.GAMEPLAY_TRADE_CARD_HELP);
++                    }
++                    if (card.GetEntity().IsForgeable())
++                    {
++                        speeches.Add(AccessibleSpeech.GAMEPLAY_FORGE_CARD_HELP);
++                    }
++                    if (card.GetEntity().IsPrepareable())
++                    {
++                        speeches.Add(AccessibleSpeech.GAMEPLAY_PREPARE_CARD_HELP);
 +                    }
 +                }
 +                else if (card.GetAccessibleZone() == playerBattlefield)
@@ -12105,7 +12127,7 @@ index 00000000..e60c8422
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleKey.cs b/Assembly-CSharp/Accessibility/AccessibleKey.cs
 new file mode 100644
-index 00000000..4009d52a
+index 00000000..929b8cd3
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleKey.cs
 @@ -0,0 +1,435 @@
@@ -12220,7 +12242,7 @@ index 00000000..4009d52a
 +        public static AccessibleKey FORCE_END_TURN = CreateKey(KeyCode.E, true);
 +        public static AccessibleKey READ_TOOLTIP = CreateKey(KeyCode.I);
 +        public static AccessibleKey READ_ORIGINAL_CARD_STATS = CreateKey(KeyCode.K);
-+        public static AccessibleKey TRADE_CARD = CreateKey(KeyCode.T);
++        public static AccessibleKey PERFORM_DECK_ACTION = CreateKey(KeyCode.T);
 +        public static AccessibleKey READ_ANOMALIES = CreateKey(KeyCode.O);
 +        public static AccessibleKey REWIND = CreateKey(KeyCode.U);
 +        public static AccessibleKey REWIND_KEEP = CreateKey(KeyCode.J);
@@ -15649,10 +15671,10 @@ index 00000000..08e84acf
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleSpeech.cs b/Assembly-CSharp/Accessibility/AccessibleSpeech.cs
 new file mode 100644
-index 00000000..e1972072
+index 00000000..17621bd0
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleSpeech.cs
-@@ -0,0 +1,309 @@
+@@ -0,0 +1,311 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Runtime.CompilerServices;
@@ -15718,7 +15740,9 @@ index 00000000..e1972072
 +        public static HSASpeech GAMEPLAY_READ_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_READ_CARD_HELP), "Use the up and down arrow keys to read this card");
 +        public static HSASpeech GAMEPLAY_READ_CARD_TOOLTIP_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_READ_CARD_TOOLTIP_HELP, AccessibleKey.READ_TOOLTIP), $"Press {AccessibleKey.READ_TOOLTIP.ToEnglishString()} to get a description of this card's abilities");
 +        public static HSASpeech GAMEPLAY_PLAY_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_PLAY_CARD_HELP, AccessibleKey.CONFIRM), $"Press {AccessibleKey.CONFIRM.ToEnglishString()} to play this card");
-+        public static HSASpeech GAMEPLAY_TRADE_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_TRADE_CARD_HELP, AccessibleKey.TRADE_CARD), $"Press {AccessibleKey.TRADE_CARD.ToEnglishString()} to trade this card");
++        public static HSASpeech GAMEPLAY_TRADE_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_TRADE_CARD_HELP, AccessibleKey.PERFORM_DECK_ACTION), $"Press {AccessibleKey.PERFORM_DECK_ACTION.ToEnglishString()} to trade this card");
++        public static HSASpeech GAMEPLAY_FORGE_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_FORGE_CARD_HELP, AccessibleKey.PERFORM_DECK_ACTION), $"Press {AccessibleKey.PERFORM_DECK_ACTION.ToEnglishString()} to forge this card");
++        public static HSASpeech GAMEPLAY_PREPARE_CARD_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_PREPARE_CARD_HELP, AccessibleKey.PERFORM_DECK_ACTION), $"Press {AccessibleKey.PERFORM_DECK_ACTION.ToEnglishString()} to prepare this card");
 +        public static HSASpeech GAMEPLAY_SUMMON_MINION_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_SUMMON_MINION_HELP, AccessibleKey.CONFIRM), $"Press {AccessibleKey.CONFIRM.ToEnglishString()} to summon this minion");
 +        public static HSASpeech GAMEPLAY_POSITION_LOCATION_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_POSITION_LOCATION_HELP, AccessibleKey.CONFIRM), $"Press {AccessibleKey.CONFIRM.ToEnglishString()} to place this location");
 +        public static HSASpeech GAMEPLAY_CHOICE_MODE_HELP = CreateSpeech(L10N.Of(LocalizationKey.GAMEPLAY_CHOICE_MODE_HELP, AccessibleKey.CONFIRM, AccessibleKey.READ_NEXT_VALID_ITEM), $"Use the arrow keys to go through your options. Press {AccessibleKey.CONFIRM.ToEnglishString()} to choose one");
@@ -27056,10 +27080,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..2768bcae
+index 00000000..a37114d4
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1284 @@
+@@ -0,0 +1,1287 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -27291,6 +27315,7 @@ index 00000000..2768bcae
 +    public static LocalizationKey GAMEPLAY_QUERY_PLAY_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_PLAY_CARD");
 +    public static LocalizationKey GAMEPLAY_QUERY_TRADE_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_TRADE_CARD");
 +    public static LocalizationKey GAMEPLAY_QUERY_FORGE_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_FORGE_CARD");
++    public static LocalizationKey GAMEPLAY_QUERY_PREPARE_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_PREPARE_CARD");
 +    public static LocalizationKey GAMEPLAY_QUERY_END_TURN_WHEN_VALID_PLAYS = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_END_TURN_WHEN_VALID_PLAYS");
 +    public static LocalizationKey GAMEPLAY_QUERY_END_TURN_WHEN_CAN_ATK = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_END_TURN_WHEN_CAN_ATK");
 +    public static LocalizationKey GAMEPLAY_QUERY_END_TURN_WHEN_CAN_USE_LOCATION = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_END_TURN_WHEN_CAN_USE_LOCATION");
@@ -27524,6 +27549,8 @@ index 00000000..2768bcae
 +    public static LocalizationKey GAMEPLAY_READ_CARD_TOOLTIP_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_READ_CARD_TOOLTIP_HELP");
 +    public static LocalizationKey GAMEPLAY_PLAY_CARD_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_PLAY_CARD_HELP");
 +    public static LocalizationKey GAMEPLAY_TRADE_CARD_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_TRADE_CARD_HELP");
++    public static LocalizationKey GAMEPLAY_FORGE_CARD_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_FORGE_CARD_HELP");
++    public static LocalizationKey GAMEPLAY_PREPARE_CARD_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_PREPARE_CARD_HELP");
 +    public static LocalizationKey GAMEPLAY_SUMMON_MINION_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_SUMMON_MINION_HELP");
 +    public static LocalizationKey GAMEPLAY_POSITION_LOCATION_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_POSITION_LOCATION_HELP");
 +    public static LocalizationKey GAMEPLAY_CHOICE_MODE_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_CHOICE_MODE_HELP");
