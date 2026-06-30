@@ -1,3 +1,12 @@
+### 2026-06-30
+
+- Updated to Hearthstone version 36.0.0.245258 (contributed by Endefx)
+- In battlegrounds, pressing R will read the number of free refreshes if you have any (contributed by Challenger)
+
+The following limitations have been identified in this version. They will be addressed once the new expansion has been fully released:
+- It is not currently possible to summon minions onto the opponent's board.
+- The mage card "The Skeleton Key" can't have its choices refreshed.
+
 ### 2026-06-03
 
 - Add support for the new "Prepare" mechanic. Press T on a preparable card to invoke it (same as trade or forge). (Contributed by Endefx).
