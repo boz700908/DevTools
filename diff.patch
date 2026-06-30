@@ -18496,10 +18496,10 @@ index 00000000..20d90672
 +}
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
 new file mode 100644
-index 00000000..e9db4093
+index 00000000..3ba47172
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsGameplay.cs
-@@ -0,0 +1,2404 @@
+@@ -0,0 +1,2425 @@
 +﻿using System;
 +using System.Collections;
 +using System.Collections.Generic;
@@ -19730,8 +19730,18 @@ index 00000000..e9db4093
 +
 +            m_refreshingTavern = true;
 +            var refreshCost = refreshButtonCard.GetEntity().GetCost();
++            var refreshText = LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_REFRESH_TAVERN_FOR_N_GOLD, refreshCost);
 +
-+            AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.BATTLEGROUNDS_GAMEPLAY_QUERY_REFRESH_TAVERN_FOR_N_GOLD, refreshCost));
++            if (refreshCost == 0)
++            {
++                var freeRefreshCountText = GetFreeRefreshCountText(refreshButtonCard);
++                if (!string.IsNullOrEmpty(freeRefreshCountText))
++                {
++                    refreshText = AccessibleSpeechUtils.CombineSentences(freeRefreshCountText, refreshText);
++                }
++            }
++
++            AccessibilityMgr.Output(this, refreshText);
 +
 +            var pingedText = AccessibleCardUtils.GetCardPingedText(refreshButtonCard.GetActor());
 +            if (pingedText != null)
@@ -19739,6 +19749,17 @@ index 00000000..e9db4093
 +                AccessibilityMgr.Output(this, pingedText);
 +            }
 +		}
++
++        private string GetFreeRefreshCountText(Card refreshButtonCard)
++        {
++            var freeRefreshCount = refreshButtonCard.GetEntity().GetTag(GAME_TAG.BACON_FREE_REFRESH_COUNT);
++            if (freeRefreshCount <= 0)
++            {
++                return null;
++            }
++
++            return TextUtils.TryFormat(GameStrings.Get(GameStrings.GetKeywordTextKey(GAME_TAG.BACON_FREE_REFRESH_COUNT)), freeRefreshCount);
++        }
 +
 +		private void ForceRefreshTavern()
 +		{
@@ -20904,7 +20925,6 @@ index 00000000..e9db4093
 +		#endregion
 +	}
 +}
-\ No newline at end of file
 diff --git a/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsHeroBuddyCard.cs b/Assembly-CSharp/Accessibility/Battlegrounds/AccessibleBattlegroundsHeroBuddyCard.cs
 new file mode 100644
 index 00000000..c5371e67
