@@ -4127,10 +4127,10 @@ index 00000000..4555017d
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 00000000..a04c3830
+index 00000000..1bbb3132
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,3116 @@
+@@ -0,0 +1,3154 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -4879,50 +4879,58 @@ index 00000000..a04c3830
 +
 +        private int m_summonPos;
 +
++        private Player.Side m_summoningSide;
++
 +        protected void HandleCardPlacement()
 +        {
-+            var playerMinions = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
-+
-+            if (playerMinions.GetCardCount() == 0)
++            var summoningStartedThisFrame = m_prevState != AccessibleGameState.SUMMONING_MINION && m_prevState != AccessibleGameState.POSITIONING_LOCATION;
++            if (summoningStartedThisFrame)
 +            {
-+                if (m_prevState != AccessibleGameState.SUMMONING_MINION
-+                    && m_prevState != AccessibleGameState.POSITIONING_LOCATION)
-+                {
-+                    AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION));
-+                    OnSummoningMinion(m_heldCard);
-+                }
++                SetSummoningSide(Player.Side.FRIENDLY);
++            }
 +
-+                MoveMouseToZone(GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone());
++            var battlefield = GetSummoningZone();
++
++            if (battlefield.GetCardCount() == 0)
++            {
++                MoveMouseToZone(battlefield);
 +            }
 +            else
 +            {
-+                if (m_prevState != AccessibleGameState.SUMMONING_MINION
-+                    && m_prevState != AccessibleGameState.POSITIONING_LOCATION)
-+                {
-+                    m_summonPos = playerMinions.GetLastPos();
-+                    QuerySummonPosition(0);
-+                }
-+
 +                HandleSummoningPositionInput();
 +
-+                if (m_summonPos == playerMinions.GetLastPos())
++                if (m_summonPos == battlefield.GetLastPos())
 +                {
-+                    MoveMouseToRightOfZone(playerMinions);
++                    MoveMouseToRightOfZone(battlefield);
 +                }
 +                else if (m_summonPos == 1)
 +                {
-+                    MoveMouseToLeftOfZone(playerMinions);
++                    MoveMouseToLeftOfZone(battlefield);
 +                }
 +                else
 +                {
-+                    var prevMinion = playerMinions.GetCardAtSlot(m_summonPos - 1);
-+                    var nextMinion = playerMinions.GetCardAtSlot(m_summonPos);
++                    var prevMinion = battlefield.GetCardAtSlot(m_summonPos - 1);
++                    var nextMinion = battlefield.GetCardAtSlot(m_summonPos);
 +                    var pos = prevMinion.transform.position + (nextMinion.transform.position - prevMinion.transform.position) / 2;
 +                    AccessibleInputMgr.MoveMouseToWorldPosition(pos);
 +                }
 +            }
 +
++            HandleSummoningSideInput();
 +            HandleConfirmOrCancel();
++        }
++
++        private void SetSummoningSide(Player.Side side)
++        {
++            m_summoningSide = side;
++
++            m_summonPos = GetSummoningZone().GetLastPos();
++            QuerySummonPosition(0);
++        }
++
++        private Zone GetSummoningZone()
++        {
++            return ZoneMgr.Get().FindZoneOfType<ZonePlay>(m_summoningSide);
 +        }
 +
 +        private void HandleSummoningPositionInput()
@@ -4942,8 +4950,8 @@ index 00000000..a04c3830
 +            }
 +            else if (AccessibleKey.READ_LAST_ITEM.IsPressed())
 +            {
-+                var playerMinions = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
-+                var lastPos = playerMinions.GetLastPos();
++                var battlefield = GetSummoningZone();
++                var lastPos = battlefield.GetLastPos();
 +                m_summonPos = lastPos;
 +                QuerySummonPosition(0);
 +            }
@@ -4953,8 +4961,8 @@ index 00000000..a04c3830
 +
 +                if (numKeyPressed.HasValue)
 +                {
-+                    var playerMinions = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
-+                    var lastPos = playerMinions.GetLastPos();
++                    var battlefield = GetSummoningZone();
++                    var lastPos = battlefield.GetLastPos();
 +
 +                    m_summonPos = Math.Min(lastPos, numKeyPressed.Value);
 +                    QuerySummonPosition(0);
@@ -4962,11 +4970,33 @@ index 00000000..a04c3830
 +            }
 +        }
 +
++        private void HandleSummoningSideInput()
++        {
++            if (!CanChangeSummoningSide())
++            {
++                return;
++            }
++
++            if (m_summoningSide == Player.Side.FRIENDLY && AccessibleKey.SWITCH_TO_OPPOSING_SUMMONING_SIDE.IsPressed())
++            {
++                SetSummoningSide(Player.Side.OPPOSING);
++            }
++            else if (m_summoningSide == Player.Side.OPPOSING && AccessibleKey.SWITCH_TO_FRIENDLY_SUMMONING_SIDE.IsPressed())
++            {
++                SetSummoningSide(Player.Side.FRIENDLY);
++            }
++        }
++
++        private bool CanChangeSummoningSide()
++        {
++            return m_heldCard?.GetEntity()?.HasDisguisedAction() ?? false;
++        }
++
 +        private void QuerySummonPosition(int inc)
 +        {
 +            var prevSummonPos = m_summonPos;
-+            var playerMinions = GameState.Get().GetFriendlySidePlayer().GetBattlefieldZone();
-+            var lastPos = playerMinions.GetLastPos();
++            var battlefield = GetSummoningZone();
++            var lastPos = battlefield.GetLastPos();
 +
 +            m_summonPos += inc;
 +
@@ -4984,26 +5014,34 @@ index 00000000..a04c3830
 +                return;
 +            }
 +
-+            if (m_summonPos == lastPos)
++            if (battlefield.GetCardCount() == 0)
 +            {
-+                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT));
-+                OnSummoningMinion(m_heldCard);
++                AccessibilityMgr.Output(this, LocalizationUtils.Get(GetSideKey(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION, LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_OPPOSING_SIDE)));
++            }
++            else if (m_summonPos == lastPos)
++            {
++                AccessibilityMgr.Output(this, LocalizationUtils.Get(GetSideKey(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT, LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT_OPPOSING_SIDE)));
 +            }
 +            else if (m_summonPos == 1)
 +            {
-+                AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT));
-+                OnSummoningMinion(m_heldCard);
++                AccessibilityMgr.Output(this, LocalizationUtils.Get(GetSideKey(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT, LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT_OPPOSING_SIDE)));
 +            }
 +            else
 +            {
-+                var prevMinion = playerMinions.GetCardAtSlot(m_summonPos - 1);
-+                var nextMinion = playerMinions.GetCardAtSlot(m_summonPos);
++                var prevMinion = battlefield.GetCardAtSlot(m_summonPos - 1);
++                var nextMinion = battlefield.GetCardAtSlot(m_summonPos);
 +                var prevMinionName = GetPreferredCardName(prevMinion);
 +                var nextMinionName = GetPreferredCardName(nextMinion);
-+                AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN, prevMinionName, nextMinionName));
-+                OnSummoningMinion(m_heldCard);
++                AccessibilityMgr.Output(this, LocalizationUtils.Format(GetSideKey(LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN, LocalizationKey.GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN_OPPOSING_SIDE), prevMinionName, nextMinionName));
 +            }
-+        }
++
++            OnSummoningMinion(m_heldCard);
++
++            LocalizationKey GetSideKey(LocalizationKey friendlyKey, LocalizationKey opposingKey)
++            {
++                return m_summoningSide == Player.Side.FRIENDLY ? friendlyKey : opposingKey;
++            }
++            }
 +
 +        protected virtual string GetPreferredCardName(Card card)
 +        {
@@ -12127,10 +12165,10 @@ index 00000000..e60c8422
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleKey.cs b/Assembly-CSharp/Accessibility/AccessibleKey.cs
 new file mode 100644
-index 00000000..929b8cd3
+index 00000000..d1777acc
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleKey.cs
-@@ -0,0 +1,435 @@
+@@ -0,0 +1,437 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using UnityEngine;
@@ -12246,6 +12284,8 @@ index 00000000..929b8cd3
 +        public static AccessibleKey READ_ANOMALIES = CreateKey(KeyCode.O);
 +        public static AccessibleKey REWIND = CreateKey(KeyCode.U);
 +        public static AccessibleKey REWIND_KEEP = CreateKey(KeyCode.J);
++        public static AccessibleKey SWITCH_TO_OPPOSING_SUMMONING_SIDE = CreateKey(KeyCode.UpArrow, false, true);
++        public static AccessibleKey SWITCH_TO_FRIENDLY_SUMMONING_SIDE = CreateKey(KeyCode.DownArrow, false, true);
 +		#endregion
 +
 +		#region Battlegrounds-specific Keys
@@ -27100,10 +27140,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..a37114d4
+index 00000000..d6588720
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1287 @@
+@@ -0,0 +1,1291 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -27329,9 +27369,13 @@ index 00000000..a37114d4
 +    public static LocalizationKey GAMEPLAY_YOU_GET_THE_COIN = CreateKey("ACCESSIBILITY_GAMEPLAY_YOU_GET_THE_COIN");
 +    public static LocalizationKey GAMEPLAY_WAITING_FOR_OPPONENT = CreateKey("ACCESSIBILITY_GAMEPLAY_WAITING_FOR_OPPONENT");
 +    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION");
++    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_OPPOSING_SIDE = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_OPPOSING_SIDE");
 +    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT");
++    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT_OPPOSING_SIDE = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_RIGHT_OPPOSING_SIDE");
 +    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT");
++    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT_OPPOSING_SIDE = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_AT_THE_LEFT_OPPOSING_SIDE");
 +    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN");
++    public static LocalizationKey GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN_OPPOSING_SIDE = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_SUMMON_MINION_BETWEEN_OPPOSING_SIDE");
 +    public static LocalizationKey GAMEPLAY_QUERY_PLAY_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_PLAY_CARD");
 +    public static LocalizationKey GAMEPLAY_QUERY_TRADE_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_TRADE_CARD");
 +    public static LocalizationKey GAMEPLAY_QUERY_FORGE_CARD = CreateKey("ACCESSIBILITY_GAMEPLAY_QUERY_FORGE_CARD");
@@ -54665,7 +54709,7 @@ index ea53b862..bdc136bb 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/GameState.cs b/Assembly-CSharp/GameState.cs
-index 29d119c4..6e6131cd 100644
+index 18ba1dbf..94edc650 100644
 --- a/Assembly-CSharp/GameState.cs
 +++ b/Assembly-CSharp/GameState.cs
 @@ -12,6 +12,7 @@ using Blizzard.T5.Core;
@@ -56028,7 +56072,7 @@ index a168aca6..f865d23f 100644
  	}
  }
 diff --git a/Assembly-CSharp/Hearthstone/Core/Streaming/Tact3AssetDownloader.cs b/Assembly-CSharp/Hearthstone/Core/Streaming/Tact3AssetDownloader.cs
-index 74c55f89..bb6699d7 100644
+index a29a6b16..f9a38565 100644
 --- a/Assembly-CSharp/Hearthstone/Core/Streaming/Tact3AssetDownloader.cs
 +++ b/Assembly-CSharp/Hearthstone/Core/Streaming/Tact3AssetDownloader.cs
 @@ -135,9 +135,9 @@ namespace Hearthstone.Core.Streaming
@@ -56213,7 +56257,7 @@ index 9892e2ae..442e2839 100644
  							throw new SeqnMismatchedException($"Mismatched sequential number: {result} != {seqn}");
  						}
 diff --git a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
-index e13e746b..8287df69 100644
+index 42b49b97..89789c15 100644
 --- a/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 +++ b/Assembly-CSharp/Hearthstone/ExceptionReporterControl.cs
 @@ -1,5 +1,6 @@
@@ -56270,7 +56314,7 @@ index e13e746b..8287df69 100644
  			catch (Exception ex)
  			{
 diff --git a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
-index a29d801a..be6940ce 100644
+index 59a0c9a7..df4dd333 100644
 --- a/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 +++ b/Assembly-CSharp/Hearthstone/HearthstoneApplication.cs
 @@ -5,6 +5,7 @@ using System.IO;
@@ -56330,7 +56374,7 @@ index a29d801a..be6940ce 100644
 +			// ExceptionReporterControl.Get().ExceptionReportInitialize(); // Remove so we don't send Blizzard exceptions that may be caused by us
 +			ExceptionReporterControl.Get().ExceptionReportInitializeDebug();
  			TelemetryManager.Client().SendSystemDetail(TelemetryUtil.GetUnitySystemInfo());
- 			HearthstonePerformance.Initialize(TestType, 4694053.ToString(), 245258);
+ 			HearthstonePerformance.Initialize(TestType, 4709223.ToString(), 246003);
  			HearthstonePerformance.Get()?.CaptureAppStartTime();
 @@ -283,7 +288,7 @@ namespace Hearthstone
  			{
@@ -56348,7 +56392,7 @@ index a29d801a..be6940ce 100644
 +			AccessibleHearthstoneApplication.OnClosing();
 +			AccessibilityMgr.Shutdown();
  			IsHearthstoneClosing = true;
- 			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 245258, Log.UberText);
+ 			UberText.StoreCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, 246003, Log.UberText);
  			if (this.OnShutdown != null)
 @@ -563,7 +570,7 @@ namespace Hearthstone
  
@@ -56387,7 +56431,7 @@ index a29d801a..be6940ce 100644
 +			jobDefinition.AddJobFinishedEventListener(OnGameStringsLoaded);
 +			Processor.QueueJob("HearthstoneApplication.InitializeMode", Job_InitializeMode(), Array.Empty<IJobDependency>());
  			Processor.QueueJob(jobDefinition);
- 			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 245258, Log.UberText));
+ 			Processor.QueueJob("UberText.LoadCachedData", UberText.Job_LoadCachedData(UberTextCacheFolderPath, UberTextCacheFilePath, PlatformFilePaths.PersistentDataPath, 246003, Log.UberText));
  			Processor.QueueJob(HearthstoneJobs.CreateJobFromAction("HearthstoneApplication.SetWindowText", SetWindowText, jobDefinition.CreateDependency()));
 @@ -763,7 +771,12 @@ namespace Hearthstone
  			}
@@ -59615,7 +59659,7 @@ index 6b330e10..b6415975 100644
  		private WidgetTemplate m_parentWidgetTemplate;
  
 diff --git a/Assembly-CSharp/HearthstoneCheckout.cs b/Assembly-CSharp/HearthstoneCheckout.cs
-index d2aa8c00..10279dfa 100644
+index f9c25fb4..41e26b8d 100644
 --- a/Assembly-CSharp/HearthstoneCheckout.cs
 +++ b/Assembly-CSharp/HearthstoneCheckout.cs
 @@ -199,9 +199,6 @@ public class HearthstoneCheckout : blz_commerce_log_hook, ISceneEventObserver, I
@@ -63297,7 +63341,7 @@ index 512213c6..f358a523 100644
  			return false;
  		}
 diff --git a/Assembly-CSharp/NetCache.cs b/Assembly-CSharp/NetCache.cs
-index a3fb022a..929fc2db 100644
+index 4d529047..ef7a9da1 100644
 --- a/Assembly-CSharp/NetCache.cs
 +++ b/Assembly-CSharp/NetCache.cs
 @@ -20,6 +20,7 @@ using PegasusLettuce;
@@ -63936,7 +63980,7 @@ index a3fb022a..929fc2db 100644
  		}
  		if (visitorInfo.ActiveRenownOffers != null)
  		{
-@@ -5047,7 +4832,7 @@ public class NetCache : IService, IHasUpdate
+@@ -5044,7 +4829,7 @@ public class NetCache : IService, IHasUpdate
  			netCacheRenownBalance.Balance = currencyState.RenownBalance;
  			OnNetCacheObjReceived(netCacheRenownBalance);
  			foreach (DelRenownBalanceListener renownBalanceListener in m_renownBalanceListeners)
@@ -63945,7 +63989,7 @@ index a3fb022a..929fc2db 100644
  				renownBalanceListener(netCacheRenownBalance);
  			}
  		}
-@@ -5130,7 +4915,7 @@ public class NetCache : IService, IHasUpdate
+@@ -5128,7 +4913,7 @@ public class NetCache : IService, IHasUpdate
  		{
  			return;
  		}
@@ -63954,7 +63998,7 @@ index a3fb022a..929fc2db 100644
  		{
  			CollectionManager.Get().GetCollectibleDisplay().GetPageManager()
  				.RefreshCurrentPageContents();
-@@ -5844,8 +5629,8 @@ public class NetCache : IService, IHasUpdate
+@@ -5842,8 +5627,8 @@ public class NetCache : IService, IHasUpdate
  			netObject.BattlegroundsFavoriteHeroSkins.Add(num, value);
  		}
  		value.Add(newBattlegroundsHeroSkinId.ToValue());
@@ -63965,7 +64009,7 @@ index a3fb022a..929fc2db 100644
  			this.FavoriteBattlegroundsHeroSkinChanged(num, newBattlegroundsHeroSkinId.ToValue());
  		}
  	}
-@@ -5858,10 +5643,10 @@ public class NetCache : IService, IHasUpdate
+@@ -5856,10 +5641,10 @@ public class NetCache : IService, IHasUpdate
  			Debug.LogWarning($"NetCache.ProcessNewFavoriteBattlegroundsBoardSkin(): trying to access NetCacheBattlegroundsBoardSkins before it has been loaded.");
  		}
  		else if (netObject.BattlegroundsFavoriteBoardSkins.Add(newFavoriteBattlegroundsBoardSkinID) && this.FavoriteBattlegroundsBoardSkinChanged != null)
@@ -63979,7 +64023,7 @@ index a3fb022a..929fc2db 100644
  
  	public void ProcessNewFavoriteBattlegroundsFinisher(BattlegroundsFinisherId newFavoriteBattlegroundsFinisherID)
  	{
-@@ -5909,8 +5694,8 @@ public class NetCache : IService, IHasUpdate
+@@ -5907,8 +5692,8 @@ public class NetCache : IService, IHasUpdate
  		{
  			netObject.FavoriteCoins.Remove(coinId);
  		}
@@ -63990,7 +64034,7 @@ index a3fb022a..929fc2db 100644
  			this.FavoriteCoinChanged(coinId, isFavorite);
  		}
  	}
-@@ -6013,15 +5798,15 @@ public class NetCache : IService, IHasUpdate
+@@ -6011,15 +5796,15 @@ public class NetCache : IService, IHasUpdate
  			return;
  		}
  		List<int> favoriteCoins = coinsPacket.FavoriteCoins;
@@ -64012,7 +64056,7 @@ index a3fb022a..929fc2db 100644
  
  	private void OnBattlegroundsHeroSkinsResponse()
  	{
-@@ -6056,12 +5841,12 @@ public class NetCache : IService, IHasUpdate
+@@ -6054,12 +5839,12 @@ public class NetCache : IService, IHasUpdate
  				item = record.ID;
  				string cardId = GameUtils.TranslateDbIdToCardId(record.SkinCardId);
  				if (!collectionManager.IsBattlegroundsHeroCard(cardId))
@@ -64031,7 +64075,7 @@ index a3fb022a..929fc2db 100644
  					netCacheBattlegroundsHeroSkins.UnseenSkinIds.Add(item2);
  				}
  			}
-@@ -6096,7 +5881,7 @@ public class NetCache : IService, IHasUpdate
+@@ -6094,7 +5879,7 @@ public class NetCache : IService, IHasUpdate
  			{
  				value = new HashSet<int>();
  				netObject.BattlegroundsFavoriteHeroSkins.Add(baseHeroCardId, value);
@@ -64040,7 +64084,7 @@ index a3fb022a..929fc2db 100644
  			int item = heroSkinId;
  			value.Add(item);
  			if (this.FavoriteBattlegroundsHeroSkinChanged != null)
-@@ -6251,10 +6036,10 @@ public class NetCache : IService, IHasUpdate
+@@ -6249,10 +6034,10 @@ public class NetCache : IService, IHasUpdate
  		}
  		NetCacheBattlegroundsBoardSkins netObject = Get().GetNetObject<NetCacheBattlegroundsBoardSkins>();
  		if (netObject != null && netObject.BattlegroundsFavoriteBoardSkins.Add(battlegroundsBoardSkinId.Value) && this.FavoriteBattlegroundsBoardSkinChanged != null)
@@ -64054,7 +64098,7 @@ index a3fb022a..929fc2db 100644
  
  	private void OnClearBattlegroundsFavoriteBoardSkinResponse()
  	{
-@@ -6547,14 +6332,14 @@ public class NetCache : IService, IHasUpdate
+@@ -6545,14 +6330,14 @@ public class NetCache : IService, IHasUpdate
  		}
  		else
  		{
@@ -64075,7 +64119,7 @@ index a3fb022a..929fc2db 100644
  	}
  
 diff --git a/Assembly-CSharp/Network.cs b/Assembly-CSharp/Network.cs
-index 67cb2257..ef0feec0 100644
+index 74a177a9..eeb8b411 100644
 --- a/Assembly-CSharp/Network.cs
 +++ b/Assembly-CSharp/Network.cs
 @@ -36,6 +36,7 @@ using PegasusUtil;
@@ -65177,7 +65221,7 @@ index 9ec8e17c..21d3dbb8 100644
  			Option.DEBUG_SHOW_BATTLEGROUND_SKIN_IDS,
  			false
 diff --git a/Assembly-CSharp/OptionsMenu.cs b/Assembly-CSharp/OptionsMenu.cs
-index 59771291..5627e733 100644
+index 2d78d224..b2a518ab 100644
 --- a/Assembly-CSharp/OptionsMenu.cs
 +++ b/Assembly-CSharp/OptionsMenu.cs
 @@ -6,9 +6,11 @@ using Blizzard.T5.Services;
@@ -74100,7 +74144,7 @@ index d3e7f6f6..9cea2cdf 100644
 +	#endregion
  }
 diff --git a/Assembly-CSharp/ShopUtils.cs b/Assembly-CSharp/ShopUtils.cs
-index f9e45f3d..7ae437ae 100644
+index 09c7fab5..26c6ab90 100644
 --- a/Assembly-CSharp/ShopUtils.cs
 +++ b/Assembly-CSharp/ShopUtils.cs
 @@ -11,6 +11,7 @@ using Hearthstone.Store;
