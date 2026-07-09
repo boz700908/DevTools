@@ -1,3 +1,8 @@
+### 2026-07-09
+
+- It is now possible to summon minions onto the opponent's board. When summoning an eligible minion, use CTRL with the up and down arrows to switch between your side and the opponent's. (Contributed by Endefx).
+- Implemented support for the card "The Skeleton Key". Press R to reroll your choices. (Contributed by Endefx).
+
 ### 2026-06-30
 
 - Updated to Hearthstone version 36.0.0.245258 (contributed by Endefx)

@@ -4127,10 +4127,10 @@ index 00000000..4555017d
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleGameplay.cs b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
 new file mode 100644
-index 00000000..1bbb3132
+index 00000000..a4eb2839
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleGameplay.cs
-@@ -0,0 +1,3154 @@
+@@ -0,0 +1,3170 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -5412,6 +5412,10 @@ index 00000000..1bbb3132
 +                AccessibleInputMgr.MoveMouseTo(m_cardBeingRead.GetCard());
 +                AccessibleInputMgr.ClickLeftMouseButton();
 +            }
++            else if (AccessibleKey.REROLL_QUEST.IsPressed())
++            {
++                RerollUIManager.TryGet()?.m_rerollButton?.TriggerRelease();
++            }
 +            else if (AccessibleKey.READ_NEXT_VALID_ITEM.IsPressed() && m_curState == AccessibleGameState.CHOICE_MODE)
 +            {
 +                ChoiceCardMgr.Get().GetToggleButton().TriggerRelease();
@@ -6653,12 +6657,24 @@ index 00000000..1bbb3132
 +                m_curPhase = AccessibleGamePhase.PLAYING;
 +                IsInBeginningChooseOne = true;
 +                m_accessibleChoiceCards.StartReading();
-+                AccessibleHistoryMgr.Get().AddEntry(title+": "+AccessibleSpeechUtils.GetNames(cards));
++
++                if (CanRerollChoice())
++                {
++                    AccessibilityMgr.Output(this, LocalizationUtils.Format(LocalizationKey.GAMEPLAY_REROLL_CHOICE_HELP, AccessibleKey.REROLL_CHOICE));
++                }
++
++                AccessibleHistoryMgr.Get().AddEntry(title + ": " + AccessibleSpeechUtils.GetNames(cards));
 +            }
 +            catch (Exception e)
 +            {
 +                AccessibilityUtils.LogFatalError(e);
 +            }
++        }
++
++        private static bool CanRerollChoice()
++        {
++            var rerollManager = RerollUIManager.TryGet();
++            return rerollManager != null && rerollManager.isActiveAndEnabled;
 +        }
 +
 +        public void OnSubOption(List<Card> cards)
@@ -12165,10 +12181,10 @@ index 00000000..e60c8422
 +}
 diff --git a/Assembly-CSharp/Accessibility/AccessibleKey.cs b/Assembly-CSharp/Accessibility/AccessibleKey.cs
 new file mode 100644
-index 00000000..d1777acc
+index 00000000..bee1f712
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/AccessibleKey.cs
-@@ -0,0 +1,437 @@
+@@ -0,0 +1,438 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using UnityEngine;
@@ -12284,6 +12300,7 @@ index 00000000..d1777acc
 +        public static AccessibleKey READ_ANOMALIES = CreateKey(KeyCode.O);
 +        public static AccessibleKey REWIND = CreateKey(KeyCode.U);
 +        public static AccessibleKey REWIND_KEEP = CreateKey(KeyCode.J);
++        public static AccessibleKey REROLL_CHOICE = CreateKey(KeyCode.R);
 +        public static AccessibleKey SWITCH_TO_OPPOSING_SUMMONING_SIDE = CreateKey(KeyCode.UpArrow, false, true);
 +        public static AccessibleKey SWITCH_TO_FRIENDLY_SUMMONING_SIDE = CreateKey(KeyCode.DownArrow, false, true);
 +		#endregion
@@ -27140,10 +27157,10 @@ index 00000000..fb167df2
 +}
 diff --git a/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
 new file mode 100644
-index 00000000..d6588720
+index 00000000..59899a79
 --- /dev/null
 +++ b/Assembly-CSharp/Accessibility/Localization/LocalizationKey.cs
-@@ -0,0 +1,1291 @@
+@@ -0,0 +1,1292 @@
 +﻿using System;
 +using System.Collections.Generic;
 +using System.Linq;
@@ -27620,6 +27637,7 @@ index 00000000..d6588720
 +    public static LocalizationKey GAMEPLAY_CHOICE_MODE_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_CHOICE_MODE_HELP");
 +    public static LocalizationKey GAMEPLAY_HIDDEN_CHOICE_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_HIDDEN_CHOICE_HELP");
 +    public static LocalizationKey GAMEPLAY_REWIND_MODE_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_REWIND_MODE_HELP");
++    public static LocalizationKey GAMEPLAY_REROLL_CHOICE_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_REROLL_CHOICE_HELP");
 +    public static LocalizationKey GAMEPLAY_CHOOSE_TARGET_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_CHOOSE_TARGET_HELP");
 +    public static LocalizationKey GAMEPLAY_ATTACK_WITH_MINION_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_ATTACK_WITH_MINION_HELP");
 +    public static LocalizationKey GAMEPLAY_ATTACK_WITH_HERO_HELP = CreateKey("ACCESSIBILITY_GAMEPLAY_ATTACK_WITH_HERO_HELP");
@@ -71554,6 +71572,33 @@ index 7d8ab29a..8a99ba48 100644
  	{
  		{
  			ReportType.SubcomplaintType.BATTLETAG,
+diff --git a/Assembly-CSharp/RerollUIManager.cs b/Assembly-CSharp/RerollUIManager.cs
+index 1e93494d..10201cf9 100644
+--- a/Assembly-CSharp/RerollUIManager.cs
++++ b/Assembly-CSharp/RerollUIManager.cs
+@@ -3,7 +3,7 @@ using UnityEngine;
+ public class RerollUIManager : MonoBehaviour
+ {
+ 	[SerializeField]
+-	private NormalButton m_rerollButton;
++	internal NormalButton m_rerollButton;
+ 
+ 	private const string RerollPrefabRef = "RerollUI.prefab:078bc2f52906724489abb5f41157fd75";
+ 
+@@ -83,4 +83,12 @@ public class RerollUIManager : MonoBehaviour
+ 		}
+ 		return false;
+ 	}
+-}
++
++	#region Accessibility
++	internal static RerollUIManager TryGet()
++	{
++		// Since this isn't a true global singleton, return the current live instance if there's one. Normal Get would create a new instance if none is active.
++		return s_instance;
++	}
++	#endregion
++	}
 diff --git a/Assembly-CSharp/ReturningPlayerMgr.cs b/Assembly-CSharp/ReturningPlayerMgr.cs
 index b7e50439..51f1efa5 100644
 --- a/Assembly-CSharp/ReturningPlayerMgr.cs
