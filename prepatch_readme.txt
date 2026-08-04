@@ -172,6 +172,12 @@ The situation with older solo adventures is similar to that of tavern brawls, as
 [05] Changelog
 ----------
 
+### 2026-08-05
+
+- Updated to Hearthstone version 36.2.0.248348 (contributed by Endefx)
+- Added support for the dark gift mechanic in Battlegrounds. Press J to buy a minion with a dark gift. The key behaves the same as refreshing or upgrading the tavern, so Shift+J and double-pressing J also work to perform the action quickly. (Contributed by Endefx).
+- Added support for the activate mechanic in Battlegrounds. Press CTRL+Space to trigger the ability of a minion on your board. (Contributed by Endefx).
+
 ### 2026-07-09
 
 - It is now possible to summon minions onto the opponent's board. When summoning an eligible minion, use CTRL with the up and down arrows to switch between your side and the opponent's. (Contributed by Endefx).
