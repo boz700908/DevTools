@@ -1,3 +1,8 @@
+### 2026-08-25
+
+- Updated to Hearthstone version 36.4.0.250339 (contributed by Endefx)
+- Improved the message when pressing J to buy a dark minion in Battlegrounds. It now tells you the tear of the minions and the remaining number of discovers. (Contributed by Fuli a)
+
 ### 2026-08-05
 
 - Updated to Hearthstone version 36.2.0.248348 (contributed by Endefx)
