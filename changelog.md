@@ -1,3 +1,10 @@
+### 2026-09-16
+
+- Updated to Hearthstone version 36.6.0.251952 (contributed by Endefx)
+- In Battlegrounds, CTRL+Enter can now be used in addition to CTRL+Space to trigger a minion's activate ability (contributed by Endefx)
+
+Note: The black market is not currently accessible.
+
 ### 2026-08-25
 
 - Updated to Hearthstone version 36.4.0.250339 (contributed by Endefx)
